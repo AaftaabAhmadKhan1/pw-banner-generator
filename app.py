@@ -15,6 +15,7 @@ from PIL import Image, ImageFilter
 
 ROOT = Path(__file__).parent
 BG_REMOVE_API_URL = os.getenv("BG_REMOVE_API_URL", "").strip()
+IS_LIVE_APP = bool(os.getenv("VERCEL") or os.getenv("VERCEL_ENV"))
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
 app.config["MAX_CONTENT_LENGTH"] = 64 * 1024 * 1024  # 64 MB
@@ -234,7 +235,11 @@ def fallback_remove_background(image: Image.Image) -> Image.Image:
 
 @app.route("/")
 def index():
-    return render_template("index.html", bg_remove_api_url=BG_REMOVE_API_URL)
+    return render_template(
+        "index.html",
+        bg_remove_api_url=BG_REMOVE_API_URL,
+        is_live_app=IS_LIVE_APP,
+    )
 
 
 @app.route("/icon.jpg")

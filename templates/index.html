@@ -175,14 +175,24 @@
     <h1>Batch Banner Generator</h1>
     </div>
   </div>
-  <a
-    class="header-action"
-    href="https://drive.google.com/drive/folders/1HKFrp5LiZq0lpLAkSnHW2qtZQebkO7DI"
-    target="_blank"
-    rel="noopener noreferrer"
-  >
-    Download Faculty Images
-  </a>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;">
+    <a
+      class="header-action"
+      href="https://www.remove.bg/"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      Remove Image Background
+    </a>
+    <a
+      class="header-action"
+      href="https://drive.google.com/drive/folders/1HKFrp5LiZq0lpLAkSnHW2qtZQebkO7DI"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      Download Faculty Images
+    </a>
+  </div>
 </div>
 
 <div class="main-layout">
@@ -402,6 +412,7 @@
 
 <script>
 const BG_REMOVE_API_URL = {{ bg_remove_api_url|tojson }};
+const LIVE_BG_REMOVAL_DISABLED = {{ is_live_app|tojson }};
 
 function getBgRemoveUrl(path) {
   if (!BG_REMOVE_API_URL) return path;
@@ -971,9 +982,11 @@ function renderFacultyList() {
         <span class="fc-drag-handle">Drag To Reorder</span>
       </div>
       <div class="fc-actions">
+        ${LIVE_BG_REMOVAL_DISABLED ? '' : `
         <button class="fc-btn ${f.bgRemoving ? 'loading' : ''} ${f.bgRemoved ? 'done' : ''}" onclick="removeFacultyBg(${f.id})">
           ${f.bgRemoving ? 'Removing...' : f.bgRemoved ? '\u2713 BG Removed' : 'Remove BG'}
         </button>
+        `}
         <button class="fc-btn" onclick="openCrop(${f.id})">Crop</button>
         <button class="fc-btn" onclick="openErase(${f.id})">Erase</button>
         <button class="fc-btn" onclick="replaceFacultyPhoto(${f.id})">Replace</button>
