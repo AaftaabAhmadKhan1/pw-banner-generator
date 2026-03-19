@@ -291,6 +291,11 @@
         <input type="file" id="customTemplateFileInput" accept="image/*" style="display:none" />
       </div>
       <div class="template-grid" id="customTemplateGrid"></div>
+      <button type="button" class="overlay-toggle" id="customDetailsToggle" onclick="toggleCustomDetails()" style="margin-top:12px;">
+        <span>Show Custom Template Settings</span>
+        <span class="arrow">&#9662;</span>
+      </button>
+      <div id="customDetailsSection" class="fc-sliders collapsed" style="padding-top:0;border-top:none;">
 
       <div class="section-title">Batch Info</div>
       <div class="form-row">
@@ -356,6 +361,32 @@
       <div class="form-group">
         <label>Logo / Brand Text</label>
         <input type="text" id="logoText" value="PW" oninput="render()" />
+      </div>
+
+      <div class="section-title">Template Boxes</div>
+      <div style="display:flex;gap:16px;margin-bottom:10px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);">
+          <input type="checkbox" id="showCustomBadgeCheck" checked onchange="toggleCustomTemplateBox('badge',this.checked)" style="accent-color:var(--primary);" /> Promo Badge
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);">
+          <input type="checkbox" id="showCustomPriceCheck" checked onchange="toggleCustomTemplateBox('price',this.checked)" style="accent-color:var(--primary);" /> Price Box
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);">
+          <input type="checkbox" id="showCustomHeroCheck" checked onchange="toggleCustomTemplateBox('hero',this.checked)" style="accent-color:var(--primary);" /> Hero Box
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);">
+          <input type="checkbox" id="showCustomFooterCheck" checked onchange="toggleCustomTemplateBox('footer',this.checked)" style="accent-color:var(--primary);" /> Footer Box
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);">
+          <input type="checkbox" id="showCustomMetaCheck" checked onchange="toggleCustomTemplateBox('meta',this.checked)" style="accent-color:var(--primary);" /> Meta Box
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);">
+          <input type="checkbox" id="showCustomMeta1Check" checked onchange="toggleCustomTemplateBox('meta1',this.checked)" style="accent-color:var(--primary);" /> Meta Box 1
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);">
+          <input type="checkbox" id="showCustomMeta2Check" checked onchange="toggleCustomTemplateBox('meta2',this.checked)" style="accent-color:var(--primary);" /> Meta Box 2
+        </label>
+      </div>
       </div>
     </div>
 
@@ -475,6 +506,7 @@ let dragFacultyId = null;
 let dragOffsetX = 0, dragOffsetY = 0;
 let draggingText = false;
 let draggingBox = false;
+let draggingCustomBox = null;
 let titleAutoCentered = true;
 
 // Batch name text position (% of canvas) and scale (% of auto-size). null = auto.
@@ -487,8 +519,17 @@ let showInfoBox = false;
 let showInfoTag = false;
 let boxPosXPct = 21, boxPosYPct = 68, boxScalePct = 100;
 let tagPosXPct = 50, tagPosYPct = 89, tagScalePct = 100;
+let showCustomBadgeBox = true;
+let showCustomPriceBox = true;
+let showCustomHeroBox = true;
+let showCustomFooterBox = true;
+let showCustomMetaBox = true;
+let showCustomMeta1Box = true;
+let showCustomMeta2Box = true;
+let customBoxPositions = {};
 let boxControlsOpen = false;
 let tagControlsOpen = false;
+let customDetailsOpen = false;
 const TAG_LOCKED_POS_X = 50;
 const TAG_LOCKED_POS_Y = 100;
 
@@ -508,6 +549,7 @@ const FACULTY_VISUAL_OVERLAP = 88;
 // Bounding box of the last rendered batch name text (for hit detection)
 let _lastTextBBox = null; // { x, y, w, h }
 let _lastBoxBBox = null; // { x, y, w, h }
+let _lastCustomBoxBBoxes = [];
 
 // ===== INIT =====
 window.addEventListener('DOMContentLoaded', () => {
@@ -631,6 +673,22 @@ function toggleOverlayControls(type) {
   syncOverlayControlStates();
 }
 
+function toggleCustomDetails() {
+  customDetailsOpen = !customDetailsOpen;
+  const section = document.getElementById('customDetailsSection');
+  const toggle = document.getElementById('customDetailsToggle');
+  if (section) section.classList.toggle('collapsed', !customDetailsOpen);
+  if (toggle) {
+    toggle.classList.toggle('open', customDetailsOpen);
+    const label = toggle.querySelector('span');
+    if (label) {
+      label.textContent = customDetailsOpen
+        ? 'Hide Custom Template Settings'
+        : 'Show Custom Template Settings';
+    }
+  }
+}
+
 function toggleCustom() {
   const sec = document.getElementById('customSection');
   const arrow = document.getElementById('customArrow');
@@ -717,6 +775,68 @@ function selectCustomTemplate(id) {
 function getCurrentCustomTemplate() {
   if (currentTemplate === 'uploaded_custom') return uploadedCustomTemplate;
   return customTemplates.find(t => t.id === currentTemplate) || null;
+}
+
+function toggleCustomTemplateBox(kind, checked) {
+  if (kind === 'badge') showCustomBadgeBox = checked;
+  if (kind === 'price') showCustomPriceBox = checked;
+  if (kind === 'hero') showCustomHeroBox = checked;
+  if (kind === 'footer') showCustomFooterBox = checked;
+  if (kind === 'meta') showCustomMetaBox = checked;
+  if (kind === 'meta1') showCustomMeta1Box = checked;
+  if (kind === 'meta2') showCustomMeta2Box = checked;
+  render();
+}
+
+function isCustomBoxVisible(kind) {
+  if (kind === 'badge') return showCustomBadgeBox;
+  if (kind === 'price') return showCustomPriceBox;
+  if (kind === 'hero') return showCustomHeroBox;
+  if (kind === 'footer') return showCustomFooterBox;
+  if (kind === 'meta') return showCustomMetaBox;
+  if (kind === 'meta1') return showCustomMeta1Box;
+  if (kind === 'meta2') return showCustomMeta2Box;
+  return true;
+}
+
+function getCustomBoxPosition(kind, defaultX, defaultY) {
+  const pos = customBoxPositions[kind];
+  if (!pos) return { x: defaultX, y: defaultY };
+  return { x: (pos.xPct / 100) * W, y: (pos.yPct / 100) * H };
+}
+
+function setCustomBoxPosition(kind, x, y) {
+  const next = {
+    xPct: Math.max(0, Math.min(100, (x / W) * 100)),
+    yPct: Math.max(0, Math.min(100, (y / H) * 100)),
+  };
+  customBoxPositions[kind] = next;
+}
+
+function resetCustomBoxBBoxes() {
+  _lastCustomBoxBBoxes = [];
+}
+
+function registerCustomBoxBBox(kind, x, y, w, h) {
+  _lastCustomBoxBBoxes.push({ key: kind, x, y, w, h });
+}
+
+function findCustomBoxAt(mx, my) {
+  for (let i = _lastCustomBoxBBoxes.length - 1; i >= 0; i--) {
+    const b = _lastCustomBoxBBoxes[i];
+    if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) return b;
+  }
+  return null;
+}
+
+function resolveCustomBoxRect(kind, x, y, w, h) {
+  if (!isPWTemplate()) {
+    if (!isCustomBoxVisible(kind)) return null;
+    const pos = getCustomBoxPosition(kind, x, y);
+    registerCustomBoxBBox(kind, pos.x, pos.y, w, h);
+    return { x: pos.x, y: pos.y, w, h };
+  }
+  return { x, y, w, h };
 }
 
 function openCustomTemplateUpload() {
@@ -1290,6 +1410,18 @@ function initCanvasDrag() {
       }
     }
 
+    if (!isPWTemplate()) {
+      const customBox = findCustomBoxAt(mx, my);
+      if (customBox) {
+        draggingCustomBox = customBox.key;
+        dragOffsetX = mx - customBox.x;
+        dragOffsetY = my - customBox.y;
+        canvas.style.cursor = 'grabbing';
+        e.preventDefault();
+        return;
+      }
+    }
+
     // Check faculty in display order: first faculty is on top, so check it first
     for (let i = 0; i < facultyPhotos.length; i++) {
       const fac = facultyPhotos[i];
@@ -1328,6 +1460,13 @@ function initCanvasDrag() {
       boxPosXPct = Math.max(0, Math.min(100, ((mx - dragOffsetX) / W) * 100));
       boxPosYPct = Math.max(0, Math.min(100, ((my - dragOffsetY) / H) * 100));
       syncBoxSliders();
+      render();
+      e.preventDefault();
+      return;
+    }
+
+    if (draggingCustomBox) {
+      setCustomBoxPosition(draggingCustomBox, mx - dragOffsetX, my - dragOffsetY);
       render();
       e.preventDefault();
       return;
@@ -1375,6 +1514,8 @@ function initCanvasDrag() {
       }
     }
 
+    if (!overSomething && !isPWTemplate() && findCustomBoxAt(mx, my)) overSomething = true;
+
     if (!overSomething) {
       for (let i = 0; i < facultyPhotos.length; i++) {
         const fac = facultyPhotos[i];
@@ -1398,6 +1539,10 @@ function initCanvasDrag() {
       draggingBox = false;
       document.getElementById('bannerCanvas').style.cursor = 'default';
     }
+    if (draggingCustomBox) {
+      draggingCustomBox = null;
+      document.getElementById('bannerCanvas').style.cursor = 'default';
+    }
     if (dragFacultyId !== null) {
       dragFacultyId = null;
       document.getElementById('bannerCanvas').style.cursor = 'default';
@@ -1411,6 +1556,10 @@ function initCanvasDrag() {
     }
     if (draggingBox) {
       draggingBox = false;
+      document.getElementById('bannerCanvas').style.cursor = 'default';
+    }
+    if (draggingCustomBox) {
+      draggingCustomBox = null;
       document.getElementById('bannerCanvas').style.cursor = 'default';
     }
     if (dragFacultyId !== null) {
@@ -1448,22 +1597,60 @@ function drawImageCover(ctx,img,x,y,w,h){
   ctx.drawImage(img,dx,dy,dw,dh);
 }
 
+function drawCustomPanel(ctx,key,x,y,w,h,r,fill,strokeStyle=null,lineWidth=1){
+  const rect = resolveCustomBoxRect(key, x, y, w, h);
+  if(!rect) return null;
+  drawRoundedRect(ctx,rect.x,rect.y,rect.w,rect.h,r);
+  ctx.fillStyle=fill;
+  ctx.fill();
+  if(strokeStyle){
+    drawRoundedRect(ctx,rect.x,rect.y,rect.w,rect.h,r);
+    ctx.strokeStyle=strokeStyle;
+    ctx.lineWidth=lineWidth;
+    ctx.stroke();
+  }
+  return rect;
+}
+
 function drawLogo(ctx,s,x,y,sz){
   ctx.save();drawRoundedRect(ctx,x,y,sz,sz,sz*0.22);ctx.fillStyle=rgba('#ffffff',0.15);ctx.fill();ctx.strokeStyle=rgba('#ffffff',0.25);ctx.lineWidth=1.5;ctx.stroke();
   ctx.font=`900 ${sz*0.45}px 'Poppins',sans-serif`;ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(s.logoText||'PW',x+sz/2,y+sz/2+1);ctx.restore();
 }
 
-function drawBadge(ctx,text,x,y,bg,fg){if(!text)return;ctx.font="bold 14px 'Inter',sans-serif";const tw=ctx.measureText(text).width;drawRoundedRect(ctx,x,y,tw+28,26,13);ctx.fillStyle=bg;ctx.fill();ctx.fillStyle=fg;ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(text,x+14,y+13);}
+function drawBadge(ctx,text,x,y,bg,fg,options={}){
+  if(!text)return;
+  ctx.font="bold 14px 'Inter',sans-serif";
+  const tw=ctx.measureText(text).width;
+  const bw = tw+28;
+  const bh = 26;
+  let drawX = x;
+  let drawY = y;
+  if(options.key){
+    const rect = resolveCustomBoxRect(options.key, x, y, bw, bh);
+    if(!rect) return;
+    drawX = rect.x;
+    drawY = rect.y;
+  }
+  drawRoundedRect(ctx,drawX,drawY,bw,bh,13);ctx.fillStyle=bg;ctx.fill();ctx.fillStyle=fg;ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(text,drawX+14,drawY+13);
+}
 
 function drawPriceBadge(ctx,s,x,y){
   if(!s.discountPrice)return;
-  drawRoundedRect(ctx,x,y,200,70,12);ctx.fillStyle=rgba('#000',0.3);ctx.fill();
-  drawRoundedRect(ctx,x,y,200,70,12);ctx.strokeStyle=rgba('#fff',0.1);ctx.lineWidth=1;ctx.stroke();
-  ctx.font="900 32px 'Poppins',sans-serif";ctx.fillStyle='#fff';ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText('\u20B9'+s.discountPrice,x+14,y+8);
+  let drawX = x;
+  let drawY = y;
+  if(!isPWTemplate()){
+    const rect = resolveCustomBoxRect('price', x, y, 200, 70);
+    if(!rect) return;
+    drawX = rect.x;
+    drawY = rect.y;
+  }
+  drawRoundedRect(ctx,drawX,drawY,200,70,12);ctx.fillStyle=rgba('#000',0.3);ctx.fill();
+  drawRoundedRect(ctx,drawX,drawY,200,70,12);ctx.strokeStyle=rgba('#fff',0.1);ctx.lineWidth=1;ctx.stroke();
+  ctx.font="900 32px 'Poppins',sans-serif";ctx.fillStyle='#fff';ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText('\u20B9'+s.discountPrice,drawX+14,drawY+8);
   if(s.originalPrice&&s.originalPrice!==s.discountPrice){
-    ctx.font="500 15px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.5);const ox=x+14,oy=y+47;ctx.fillText('\u20B9'+s.originalPrice,ox,oy);
+    ctx.font="500 15px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.5);const ox=drawX+14,oy=drawY+47;ctx.fillText('\u20B9'+s.originalPrice,ox,oy);
     const ow=ctx.measureText('\u20B9'+s.originalPrice).width;ctx.strokeStyle=rgba('#fff',0.5);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(ox,oy+7);ctx.lineTo(ox+ow,oy+7);ctx.stroke();
-    if(parseInt(s.originalPrice)>0){const pct=Math.round((1-parseInt(s.discountPrice)/parseInt(s.originalPrice))*100);if(pct>0){ctx.font="bold 14px 'Inter',sans-serif";ctx.fillStyle='#4ade80';ctx.fillText(pct+'% OFF',x+110,oy);}}
+    if(parseInt(s.originalPrice)>0){const pct=Math.round((1-parseInt(s.discountPrice)/parseInt(s.originalPrice))*100);if(pct>0){ctx.font="bold 14px 'Inter',sans-serif";ctx.fillStyle='#4ade80';ctx.fillText(pct+'% OFF',drawX+110,oy);}}
   }
 }
 
@@ -1628,12 +1815,12 @@ function renderGradientBurst(ctx,s){
   drawDecoCircles(ctx,s);drawDots(ctx,'#fff',60);drawDiagonalStripes(ctx,'#fff');
   ctx.save();drawCircle(ctx,W*0.82,H*0.4,200);ctx.strokeStyle=rgba('#fff',0.06);ctx.lineWidth=40;ctx.stroke();ctx.restore();
   drawFacultyPhotos(ctx,s);
-  drawLogo(ctx,s,50,40,52);drawBadge(ctx,s.badgeText,120,46,s.colorAccent,'#000');
+  drawLogo(ctx,s,50,40,52);drawBadge(ctx,s.badgeText,120,46,s.colorAccent,'#000',{key:'badge'});
   ctx.font="900 64px 'Poppins',sans-serif";ctx.fillStyle='#fff';ctx.textAlign='left';ctx.textBaseline='top';
   let ny=130;for(const l of measureText(ctx,s.batchName,700,ctx.font)){ctx.fillText(l,55,ny);ny+=72;}
   if(s.batchYear){ctx.font="800 56px 'Poppins',sans-serif";ctx.fillStyle=rgba('#fff',0.2);ctx.fillText(s.batchYear,58,ny-5);ny+=50;}
   ctx.font="500 22px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.85);ctx.fillText(s.tagline,58,ny+5);ny+=40;
-  drawBadge(ctx,s.batchClass+' \u00b7 '+s.examTarget,55,ny,rgba('#fff',0.18),'#fff');
+  drawBadge(ctx,s.batchClass+' \u00b7 '+s.examTarget,55,ny,rgba('#fff',0.18),'#fff',{key:'meta'});
   drawPriceBadge(ctx,s,W-250,50);drawFeaturePills(ctx,s,55,H-140,700);drawTeacherNames(ctx,s,55,H-50);
   if(s.validity){ctx.font="500 13px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.5);ctx.textAlign='right';ctx.fillText(s.validity,W-50,H-50);}
   ctx.font="500 12px 'Inter',sans-serif";ctx.textAlign='right';ctx.fillStyle=rgba('#fff',0.5);ctx.fillText(s.language,W-50,H-30);
@@ -1647,11 +1834,11 @@ function renderModernSplit(ctx,s){
   drawLogo(ctx,s,45,35,48);ctx.font="900 58px 'Poppins',sans-serif";ctx.fillStyle='#fff';ctx.textAlign='left';ctx.textBaseline='top';
   let ny=120;for(const l of measureText(ctx,s.batchName,sx-120,ctx.font)){ctx.fillText(l,50,ny);ny+=66;}
   ctx.font="500 20px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.8);ctx.fillText(s.tagline,52,ny+10);
-  drawBadge(ctx,s.batchClass,50,ny+50,rgba('#fff',0.2),'#fff');const cw2=ctx.measureText(s.batchClass).width+40;drawBadge(ctx,s.examTarget,60+cw2,ny+50,s.colorAccent,'#000');
+  drawBadge(ctx,s.batchClass,50,ny+50,rgba('#fff',0.2),'#fff',{key:'meta1'});const cw2=ctx.measureText(s.batchClass).width+40;drawBadge(ctx,s.examTarget,60+cw2,ny+50,s.colorAccent,'#000',{key:'meta2'});
   drawFeaturePills(ctx,s,50,H-130,sx-120);drawTeacherNames(ctx,s,50,H-45);
   const rx=sx+40;ctx.font="900 100px 'Poppins',sans-serif";ctx.fillStyle=rgba('#fff',0.06);ctx.textAlign='center';ctx.fillText(s.examTarget,sx+(W-sx)/2,200);
   drawPriceBadge(ctx,s,rx,240);if(s.validity){ctx.font="600 16px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.6);ctx.textAlign='left';ctx.fillText(s.validity,rx,330);}
-  drawBadge(ctx,s.badgeText,rx,370,s.colorAccent,'#000');ctx.font="500 14px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.4);ctx.textAlign='left';ctx.fillText(s.stream+' \u00b7 '+s.language,rx,H-45);
+  drawBadge(ctx,s.badgeText,rx,370,s.colorAccent,'#000',{key:'badge'});ctx.font="500 14px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.4);ctx.textAlign='left';ctx.fillText(s.stream+' \u00b7 '+s.language,rx,H-45);
 }
 
 function renderNeonDark(ctx,s){
@@ -1661,12 +1848,12 @@ function renderNeonDark(ctx,s){
   drawDots(ctx,s.colorPrimary,40);ctx.strokeStyle=rgba(s.colorPrimary,0.3);ctx.lineWidth=2;ctx.strokeRect(30,30,W-60,H-60);
   const cl=40;ctx.strokeStyle=s.colorAccent;ctx.lineWidth=3;[[30,30,1,1],[W-30,30,-1,1],[30,H-30,1,-1],[W-30,H-30,-1,-1]].forEach(([cx,cy,dx,dy])=>{ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+cl*dx,cy);ctx.stroke();ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx,cy+cl*dy);ctx.stroke();});
   drawFacultyPhotos(ctx,s);
-  drawLogo(ctx,s,55,55,48);drawBadge(ctx,s.badgeText,120,63,s.colorAccent,'#000');
+  drawLogo(ctx,s,55,55,48);drawBadge(ctx,s.badgeText,120,63,s.colorAccent,'#000',{key:'badge'});
   ctx.save();ctx.shadowColor=s.colorPrimary;ctx.shadowBlur=30;ctx.font="900 62px 'Poppins',sans-serif";ctx.fillStyle='#fff';ctx.textAlign='left';ctx.textBaseline='top';
   let ny=140;for(const l of measureText(ctx,s.batchName,750,ctx.font)){ctx.fillText(l,58,ny);ny+=70;}ctx.restore();
   ctx.font="900 120px 'Poppins',sans-serif";ctx.fillStyle=rgba(s.colorPrimary,0.07);ctx.textAlign='right';ctx.fillText(s.batchYear,W-50,180);
   ctx.font="500 21px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.7);ctx.textAlign='left';ctx.fillText(s.tagline,60,ny+10);
-  drawBadge(ctx,s.batchClass+' \u00b7 '+s.examTarget+' \u00b7 '+s.stream,58,ny+50,rgba(s.colorPrimary,0.3),'#fff');
+  drawBadge(ctx,s.batchClass+' \u00b7 '+s.examTarget+' \u00b7 '+s.stream,58,ny+50,rgba(s.colorPrimary,0.3),'#fff',{key:'meta'});
   drawPriceBadge(ctx,s,W-260,55);drawFeaturePills(ctx,s,58,H-140,750);drawTeacherNames(ctx,s,58,H-50);
   ctx.font="500 13px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.4);ctx.textAlign='right';ctx.fillText(s.validity+' \u00b7 '+s.language,W-50,H-50);
 }
@@ -1675,9 +1862,9 @@ function renderWaveFlow(ctx,s){
   const g=ctx.createLinearGradient(0,0,W*0.5,H);g.addColorStop(0,s.colorPrimary);g.addColorStop(1,s.colorSecondary);ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
   drawWaves(ctx,rgba('#fff',0.06),H*0.5,40,3);drawWaves(ctx,rgba('#fff',0.04),H*0.6,30,2);drawWaves(ctx,rgba('#000',0.1),H*0.75,25,4);drawDots(ctx,'#fff',50);
   drawFacultyPhotos(ctx,s);
-  drawLogo(ctx,s,50,35,48);drawBadge(ctx,s.badgeText,115,43,s.colorAccent,'#000');
+  drawLogo(ctx,s,50,35,48);drawBadge(ctx,s.badgeText,115,43,s.colorAccent,'#000',{key:'badge'});
   ctx.font="900 60px 'Poppins',sans-serif";ctx.fillStyle='#fff';ctx.textAlign='left';ctx.textBaseline='top';let ny=115;for(const l of measureText(ctx,s.batchName,650,ctx.font)){ctx.fillText(l,55,ny);ny+=68;}
-  ctx.font="500 22px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.85);ctx.fillText(s.tagline,58,ny+5);drawBadge(ctx,s.batchClass+' \u00b7 '+s.examTarget,55,ny+45,rgba('#fff',0.2),'#fff');
+  ctx.font="500 22px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.85);ctx.fillText(s.tagline,58,ny+5);drawBadge(ctx,s.batchClass+' \u00b7 '+s.examTarget,55,ny+45,rgba('#fff',0.2),'#fff',{key:'meta'});
   drawPriceBadge(ctx,s,W-250,40);ctx.fillStyle=rgba('#000',0.25);ctx.fillRect(0,H-100,W,100);drawFeaturePills(ctx,s,55,H-85,W-350);drawTeacherNames(ctx,s,55,H-30);
   ctx.font="500 13px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.5);ctx.textAlign='right';ctx.fillText(s.language+' \u00b7 '+s.validity,W-50,H-30);
 }
@@ -1690,15 +1877,20 @@ function renderDecorativeWaveSoft(ctx,s){
   drawWaves(ctx,rgba('#ffffff',0.35),H*0.8,18,2.8);
   ctx.save();ctx.beginPath();ctx.moveTo(0,H*0.2);ctx.bezierCurveTo(W*0.16,H*0.08,W*0.32,H*0.34,W*0.52,H*0.22);ctx.bezierCurveTo(W*0.7,H*0.12,W*0.84,H*0.2,W,H*0.08);ctx.strokeStyle=rgba(s.colorPrimary,0.12);ctx.lineWidth=8;ctx.stroke();ctx.restore();
   drawFacultyPhotos(ctx,s);
-  drawRoundedRect(ctx,44,38,420,158,30);ctx.fillStyle=rgba('#ffffff',0.74);ctx.fill();ctx.strokeStyle=rgba(s.colorPrimary,0.12);ctx.lineWidth=1.2;ctx.stroke();
-  drawLogo(ctx,s,62,56,44);drawBadge(ctx,s.badgeText,120,65,rgba(s.colorPrimary,0.15),s.colorPrimary);
+  const heroRect = drawCustomPanel(ctx,'hero',44,38,420,158,30,rgba('#ffffff',0.74),rgba(s.colorPrimary,0.12),1.2);
+  const heroX = heroRect ? heroRect.x : 44;
+  const heroY = heroRect ? heroRect.y : 38;
+  drawLogo(ctx,s,62,56,44);drawBadge(ctx,s.badgeText,120,65,rgba(s.colorPrimary,0.15),s.colorPrimary,{key:'badge'});
   ctx.font="900 56px 'Poppins',sans-serif";ctx.fillStyle='#0f172a';ctx.textAlign='left';ctx.textBaseline='top';
-  let ny=104;for(const l of measureText(ctx,s.batchName,340,ctx.font)){ctx.fillText(l,62,ny);ny+=62;}
-  ctx.font="500 18px 'Inter',sans-serif";ctx.fillStyle='rgba(15,23,42,0.68)';ctx.fillText(s.tagline,62,ny+4);
-  drawRoundedRect(ctx,48,H-96,W-96,52,22);ctx.fillStyle=rgba('#ffffff',0.72);ctx.fill();ctx.strokeStyle=rgba(s.colorPrimary,0.1);ctx.lineWidth=1;ctx.stroke();
+  let ny=heroY+66;for(const l of measureText(ctx,s.batchName,340,ctx.font)){ctx.fillText(l,heroX+18,ny);ny+=62;}
+  ctx.font="500 18px 'Inter',sans-serif";ctx.fillStyle='rgba(15,23,42,0.68)';ctx.fillText(s.tagline,heroX+18,ny+4);
+  const footerRect = drawCustomPanel(ctx,'footer',48,H-96,W-96,52,22,rgba('#ffffff',0.72),rgba(s.colorPrimary,0.1),1);
+  const footerX = footerRect ? footerRect.x : 48;
+  const footerY = footerRect ? footerRect.y : H-96;
   ctx.font="600 14px 'Inter',sans-serif";ctx.fillStyle='#1f2937';ctx.textAlign='left';ctx.textBaseline='middle';
-  const footerText=(s.features.slice(0,3).join('  •  ')||'Live classes  •  Notes  •  Tests');ctx.fillText(footerText,66,H-70);
-  ctx.font="500 13px 'Inter',sans-serif";ctx.fillStyle='rgba(15,23,42,0.55)';ctx.textAlign='right';ctx.fillText(s.examTarget+'  •  '+s.language,W-64,H-70);
+  const footerText=(s.features.slice(0,3).join('  •  ')||'Live classes  •  Notes  •  Tests');ctx.fillText(footerText,footerX+18,footerY+26);
+  const footerW = footerRect ? footerRect.w : (W-96);
+  ctx.font="500 13px 'Inter',sans-serif";ctx.fillStyle='rgba(15,23,42,0.55)';ctx.textAlign='right';ctx.fillText(s.examTarget+'  •  '+s.language,footerX+footerW-16,footerY+26);
 }
 
 function renderDecorativeWaveArc(ctx,s){
@@ -1710,19 +1902,26 @@ function renderDecorativeWaveArc(ctx,s){
   drawWaves(ctx,rgba('#000000',0.08),H*0.82,16,2.2);
   ctx.save();ctx.beginPath();ctx.moveTo(0,H*0.32);ctx.bezierCurveTo(W*0.26,H*0.1,W*0.46,H*0.46,W*0.76,H*0.24);ctx.bezierCurveTo(W*0.88,H*0.16,W*0.96,H*0.18,W,H*0.12);ctx.strokeStyle=rgba('#ffffff',0.18);ctx.lineWidth=4;ctx.stroke();ctx.restore();
   drawFacultyPhotos(ctx,s);
-  drawRoundedRect(ctx,46,42,470,168,28);ctx.fillStyle=rgba('#0f172a',0.2);ctx.fill();ctx.strokeStyle=rgba('#ffffff',0.18);ctx.lineWidth=1;ctx.stroke();
-  drawLogo(ctx,s,64,60,44);drawBadge(ctx,s.badgeText,122,69,rgba('#ffffff',0.18),'#ffffff');
+  const heroRect = drawCustomPanel(ctx,'hero',46,42,470,168,28,rgba('#0f172a',0.2),rgba('#ffffff',0.18),1);
+  const heroX = heroRect ? heroRect.x : 46;
+  const heroY = heroRect ? heroRect.y : 42;
+  drawLogo(ctx,s,64,60,44);drawBadge(ctx,s.badgeText,122,69,rgba('#ffffff',0.18),'#ffffff',{key:'badge'});
   ctx.font="900 58px 'Poppins',sans-serif";ctx.fillStyle='#ffffff';ctx.textAlign='left';ctx.textBaseline='top';
-  let ny=108;for(const l of measureText(ctx,s.batchName,380,ctx.font)){ctx.fillText(l,64,ny);ny+=64;}
-  ctx.font="500 19px 'Inter',sans-serif";ctx.fillStyle='rgba(255,255,255,0.84)';ctx.fillText(s.tagline,64,ny+4);
-  drawRoundedRect(ctx,W-286,48,228,88,24);ctx.fillStyle=rgba('#ffffff',0.14);ctx.fill();ctx.strokeStyle=rgba('#ffffff',0.18);ctx.lineWidth=1;ctx.stroke();
-  ctx.font="900 36px 'Poppins',sans-serif";ctx.fillStyle='#ffffff';ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText('\u20B9'+s.discountPrice,W-264,64);
-  ctx.font="500 13px 'Inter',sans-serif";ctx.fillStyle='rgba(255,255,255,0.72)';ctx.fillText(s.batchClass+'  •  '+s.examTarget,W-264,108);
-  drawRoundedRect(ctx,52,H-108,W-104,60,24);ctx.fillStyle=rgba('#0f172a',0.22);ctx.fill();ctx.strokeStyle=rgba('#ffffff',0.18);ctx.lineWidth=1;ctx.stroke();
+  let ny=heroY+66;for(const l of measureText(ctx,s.batchName,380,ctx.font)){ctx.fillText(l,heroX+18,ny);ny+=64;}
+  ctx.font="500 19px 'Inter',sans-serif";ctx.fillStyle='rgba(255,255,255,0.84)';ctx.fillText(s.tagline,heroX+18,ny+4);
+  const priceRect = drawCustomPanel(ctx,'price',W-286,48,228,88,24,rgba('#ffffff',0.14),rgba('#ffffff',0.18),1);
+  const priceX = priceRect ? priceRect.x : W-286;
+  const priceY = priceRect ? priceRect.y : 48;
+  ctx.font="900 36px 'Poppins',sans-serif";ctx.fillStyle='#ffffff';ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText('\u20B9'+s.discountPrice,priceX+22,priceY+16);
+  ctx.font="500 13px 'Inter',sans-serif";ctx.fillStyle='rgba(255,255,255,0.72)';ctx.fillText(s.batchClass+'  •  '+s.examTarget,priceX+22,priceY+60);
+  const footerRect = drawCustomPanel(ctx,'footer',52,H-108,W-104,60,24,rgba('#0f172a',0.22),rgba('#ffffff',0.18),1);
+  const footerX = footerRect ? footerRect.x : 52;
+  const footerY = footerRect ? footerRect.y : H-108;
+  const footerW = footerRect ? footerRect.w : (W-104);
   ctx.font="600 14px 'Inter',sans-serif";ctx.fillStyle='#ffffff';ctx.textAlign='left';ctx.textBaseline='middle';
   const bottomText=(s.features.slice(0,3).join('  •  ')||'Concept videos  •  Doubt support  •  Practice');
-  ctx.fillText(bottomText,72,H-78);
-  ctx.font="500 13px 'Inter',sans-serif";ctx.fillStyle='rgba(255,255,255,0.72)';ctx.textAlign='right';ctx.fillText(s.validity,W-72,H-78);
+  ctx.fillText(bottomText,footerX+20,footerY+30);
+  ctx.font="500 13px 'Inter',sans-serif";ctx.fillStyle='rgba(255,255,255,0.72)';ctx.textAlign='right';ctx.fillText(s.validity,footerX+footerW-20,footerY+30);
 }
 
 function renderRoyalGold(ctx,s){
@@ -1732,11 +1931,11 @@ function renderRoyalGold(ctx,s){
   drawCircle(ctx,W*0.9,H*0.2,250);ctx.strokeStyle=rgba(s.colorAccent,0.05);ctx.lineWidth=1;ctx.stroke();drawCircle(ctx,W*0.9,H*0.2,200);ctx.stroke();
   ctx.fillStyle=rgba(s.colorAccent,0.08);ctx.fillRect(0,0,W,80);ctx.fillStyle=rgba(s.colorAccent,0.15);ctx.fillRect(0,78,W,2);
   drawFacultyPhotos(ctx,s);
-  drawLogo(ctx,s,40,16,48);drawBadge(ctx,s.badgeText,105,24,s.colorAccent,'#000');drawPriceBadge(ctx,s,W-250,5);
+  drawLogo(ctx,s,40,16,48);drawBadge(ctx,s.badgeText,105,24,s.colorAccent,'#000',{key:'badge'});drawPriceBadge(ctx,s,W-250,5);
   ctx.font="900 64px 'Poppins',sans-serif";ctx.fillStyle=s.colorAccent;ctx.textAlign='left';ctx.textBaseline='top';let ny=110;for(const l of measureText(ctx,s.batchName,800,ctx.font)){ctx.fillText(l,50,ny);ny+=72;}
   ctx.font="800 48px 'Poppins',sans-serif";ctx.fillStyle=rgba(s.colorAccent,0.15);ctx.fillText(s.batchYear,55,ny);
   ctx.font="500 22px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.75);ctx.fillText(s.tagline,55,ny+55);
-  drawBadge(ctx,s.batchClass,50,ny+95,rgba(s.colorAccent,0.2),s.colorAccent);const cw3=ctx.measureText(s.batchClass).width+40;drawBadge(ctx,s.examTarget+' \u00b7 '+s.stream,60+cw3,ny+95,rgba('#fff',0.08),'#fff');
+  drawBadge(ctx,s.batchClass,50,ny+95,rgba(s.colorAccent,0.2),s.colorAccent,{key:'meta1'});const cw3=ctx.measureText(s.batchClass).width+40;drawBadge(ctx,s.examTarget+' \u00b7 '+s.stream,60+cw3,ny+95,rgba('#fff',0.08),'#fff',{key:'meta2'});
   drawFeaturePills(ctx,s,50,H-130,W-100);drawTeacherNames(ctx,s,50,H-45);ctx.font="500 13px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.35);ctx.textAlign='right';ctx.fillText(s.validity+' \u00b7 '+s.language,W-50,H-45);
 }
 
@@ -1744,9 +1943,9 @@ function renderSunsetBlaze(ctx,s){
   const g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,s.colorPrimary);g.addColorStop(0.5,s.colorSecondary);g.addColorStop(1,'#fbbf24');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
   ctx.save();ctx.beginPath();ctx.moveTo(W*0.55,0);ctx.lineTo(W,0);ctx.lineTo(W,H*0.5);ctx.closePath();ctx.fillStyle=rgba('#000',0.1);ctx.fill();ctx.restore();
   drawFacultyPhotos(ctx,s);
-  drawLogo(ctx,s,50,40,52);drawBadge(ctx,s.badgeText,120,48,'#000','#fff');
+  drawLogo(ctx,s,50,40,52);drawBadge(ctx,s.badgeText,120,48,'#000','#fff',{key:'badge'});
   ctx.font="900 66px 'Poppins',sans-serif";ctx.textAlign='left';ctx.textBaseline='top';let ny=130;for(const l of measureText(ctx,s.batchName,700,ctx.font)){ctx.fillStyle=rgba('#000',0.2);ctx.fillText(l,57,ny+2);ctx.fillStyle='#fff';ctx.fillText(l,55,ny);ny+=74;}
-  ctx.font="600 24px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.9);ctx.fillText(s.tagline,58,ny+5);drawBadge(ctx,s.batchClass+' \u00b7 '+s.examTarget,55,ny+50,rgba('#000',0.25),'#fff');
+  ctx.font="600 24px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.9);ctx.fillText(s.tagline,58,ny+5);drawBadge(ctx,s.batchClass+' \u00b7 '+s.examTarget,55,ny+50,rgba('#000',0.25),'#fff',{key:'meta'});
   drawPriceBadge(ctx,s,W-250,50);drawFeaturePills(ctx,s,55,H-135,700);drawTeacherNames(ctx,s,55,H-50);
   ctx.font="500 13px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.5);ctx.textAlign='right';ctx.fillText(s.validity+' \u00b7 '+s.language,W-50,H-50);
 }
@@ -1757,7 +1956,7 @@ function renderOceanDeep(ctx,s){
   let g2=ctx.createRadialGradient(W*0.8,H*0.15,0,W*0.8,H*0.15,300);g2.addColorStop(0,rgba(s.colorPrimary,0.15));g2.addColorStop(1,'transparent');ctx.fillStyle=g2;ctx.fillRect(0,0,W,H);
   drawGrid(ctx,s.colorSecondary);drawDots(ctx,s.colorSecondary,50);ctx.fillStyle=rgba(s.colorSecondary,0.3);ctx.fillRect(50,100,W-100,1);
   drawFacultyPhotos(ctx,s);
-  drawLogo(ctx,s,50,35,48);drawBadge(ctx,s.badgeText,115,43,s.colorSecondary,'#000');
+  drawLogo(ctx,s,50,35,48);drawBadge(ctx,s.badgeText,115,43,s.colorSecondary,'#000',{key:'badge'});
   ctx.font="900 90px 'Poppins',sans-serif";ctx.fillStyle=rgba(s.colorSecondary,0.08);ctx.textAlign='right';ctx.fillText(s.batchYear,W-40,80);
   ctx.font="900 60px 'Poppins',sans-serif";ctx.fillStyle='#fff';ctx.textAlign='left';ctx.textBaseline='top';let ny=125;for(const l of measureText(ctx,s.batchName,750,ctx.font)){ctx.fillText(l,55,ny);ny+=68;}
   ctx.font="500 22px 'Inter',sans-serif";ctx.fillStyle=s.colorSecondary;ctx.fillText(s.tagline,58,ny+8);
@@ -1774,14 +1973,14 @@ function renderCleanMinimal(ctx,s){
   for(let dx=W*0.65;dx<W-30;dx+=18)for(let dy=H*0.55;dy<H-30;dy+=18){drawCircle(ctx,dx,dy,1.5);ctx.fillStyle=rgba(s.colorSecondary,0.08);ctx.fill();}
   drawFacultyPhotos(ctx,s);
   ctx.save();drawRoundedRect(ctx,40,35,48,48,10);ctx.fillStyle=s.colorSecondary;ctx.fill();ctx.font="900 20px 'Poppins',sans-serif";ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(s.logoText,64,60);ctx.restore();
-  drawBadge(ctx,s.badgeText,105,42,rgba(s.colorSecondary,0.1),s.colorSecondary);
+  drawBadge(ctx,s.badgeText,105,42,rgba(s.colorSecondary,0.1),s.colorSecondary,{key:'badge'});
   ctx.font="900 58px 'Poppins',sans-serif";ctx.fillStyle='#111827';ctx.textAlign='left';ctx.textBaseline='top';let ny=115;for(const l of measureText(ctx,s.batchName,700,ctx.font)){ctx.fillText(l,45,ny);ny+=66;}
   ctx.font="800 42px 'Poppins',sans-serif";ctx.fillStyle=s.colorSecondary;ctx.fillText(s.batchYear,48,ny);ny+=50;
   ctx.font="500 20px 'Inter',sans-serif";ctx.fillStyle='#4b5563';ctx.fillText(s.tagline,48,ny);
-  drawBadge(ctx,s.batchClass+' \u00b7 '+s.examTarget,45,ny+40,rgba(s.colorSecondary,0.1),s.colorSecondary);
-  ctx.save();drawRoundedRect(ctx,W-240,35,200,70,12);ctx.fillStyle=rgba(s.colorSecondary,0.07);ctx.fill();ctx.strokeStyle=rgba(s.colorSecondary,0.15);ctx.lineWidth=1;ctx.stroke();
-  ctx.font="900 30px 'Poppins',sans-serif";ctx.fillStyle=s.colorSecondary;ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText('\u20B9'+s.discountPrice,W-224,42);
-  if(s.originalPrice&&s.originalPrice!==s.discountPrice){ctx.font="500 14px 'Inter',sans-serif";ctx.fillStyle='#9ca3af';const opx=W-224;ctx.fillText('\u20B9'+s.originalPrice,opx,78);const ow=ctx.measureText('\u20B9'+s.originalPrice).width;ctx.strokeStyle='#9ca3af';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(opx,86);ctx.lineTo(opx+ow,86);ctx.stroke();}
+  drawBadge(ctx,s.batchClass+' \u00b7 '+s.examTarget,45,ny+40,rgba(s.colorSecondary,0.1),s.colorSecondary,{key:'meta'});
+  ctx.save();const priceRect = drawCustomPanel(ctx,'price',W-240,35,200,70,12,rgba(s.colorSecondary,0.07),rgba(s.colorSecondary,0.15),1);const priceX = priceRect ? priceRect.x : W-240; const priceY = priceRect ? priceRect.y : 35;
+  ctx.font="900 30px 'Poppins',sans-serif";ctx.fillStyle=s.colorSecondary;ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText('\u20B9'+s.discountPrice,priceX+16,priceY+7);
+  if(s.originalPrice&&s.originalPrice!==s.discountPrice){ctx.font="500 14px 'Inter',sans-serif";ctx.fillStyle='#9ca3af';const opx=priceX+16; const opy=priceY+43; ctx.fillText('\u20B9'+s.originalPrice,opx,opy);const ow=ctx.measureText('\u20B9'+s.originalPrice).width;ctx.strokeStyle='#9ca3af';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(opx,opy+8);ctx.lineTo(opx+ow,opy+8);ctx.stroke();}
   ctx.restore();
   ctx.font="600 13px 'Inter',sans-serif";let cx=45,cy=H-130;
   for(const feat of s.features){const tw=ctx.measureText(feat).width;const pW=tw+44,pH2=28;if(cx+pW>750&&cx>45){cx=45;cy+=pH2+8;}
@@ -1798,10 +1997,12 @@ function renderUploadedCustom(ctx,s){
   drawImageCover(ctx,uploaded.imageObj,0,0,W,H);
   const shade=ctx.createLinearGradient(0,0,0,H);shade.addColorStop(0,'rgba(0,0,0,0.06)');shade.addColorStop(1,'rgba(0,0,0,0.18)');ctx.fillStyle=shade;ctx.fillRect(0,0,W,H);
   drawFacultyPhotos(ctx,s);
-  drawRoundedRect(ctx,40,36,430,148,28);ctx.fillStyle='rgba(255,255,255,0.72)';ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.22)';ctx.lineWidth=1;ctx.stroke();
+  const heroRect = drawCustomPanel(ctx,'hero',40,36,430,148,28,'rgba(255,255,255,0.72)','rgba(255,255,255,0.22)',1);
+  const heroX = heroRect ? heroRect.x : 40;
+  const heroY = heroRect ? heroRect.y : 36;
   ctx.font="900 56px 'Poppins',sans-serif";ctx.fillStyle='#111827';ctx.textAlign='left';ctx.textBaseline='top';
-  let ny=66;for(const l of measureText(ctx,s.batchName||'Batch Banner',360,ctx.font)){ctx.fillText(l,62,ny);ny+=62;}
-  ctx.font="500 18px 'Inter',sans-serif";ctx.fillStyle='rgba(17,24,39,0.72)';ctx.fillText(s.tagline||'Custom banner template',62,ny+4);
+  let ny=heroY+30;for(const l of measureText(ctx,s.batchName||'Batch Banner',360,ctx.font)){ctx.fillText(l,heroX+22,ny);ny+=62;}
+  ctx.font="500 18px 'Inter',sans-serif";ctx.fillStyle='rgba(17,24,39,0.72)';ctx.fillText(s.tagline||'Custom banner template',heroX+22,ny+4);
 }
 
 // ===== OVERLAY HELPERS =====
@@ -1955,6 +2156,7 @@ function render() {
   const canvas = document.getElementById('bannerCanvas');
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, W, H);
+  resetCustomBoxBBoxes();
   const s = getState();
 
   if (isPWTemplate()) {
