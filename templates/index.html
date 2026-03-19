@@ -877,10 +877,16 @@ function toggleFacultyControls(id) {
 }
 
 function onFacultyCardDragStart(id, event) {
+  const interactive = event.target && event.target.closest('input, button, label, select, textarea');
+  if (interactive) {
+    event.preventDefault();
+    return false;
+  }
   draggedFacultyId = id;
   event.dataTransfer.effectAllowed = 'move';
   event.dataTransfer.setData('text/plain', String(id));
   event.currentTarget.classList.add('dragging');
+  return true;
 }
 
 function onFacultyCardDragEnd(event) {
@@ -915,6 +921,19 @@ function onFacultyCardDrop(targetId, event) {
   autoArrangeFaculty(true);
   renderFacultyList();
   render();
+}
+
+function lockFacultyCardDrag(event) {
+  const card = event.currentTarget.closest('.faculty-card');
+  if (!card) return;
+  card.draggable = false;
+  event.stopPropagation();
+}
+
+function unlockFacultyCardDrag(event) {
+  const card = event.currentTarget.closest('.faculty-card');
+  if (!card) return;
+  card.draggable = true;
 }
 
 function renderFacultyList() {
@@ -957,13 +976,13 @@ function renderFacultyList() {
       </button>
       <div class="fc-sliders ${f.controlsOpen ? '' : 'collapsed'}">
         <label>Horizontal <span id="flbl-posX-${f.id}">${Math.round(f.posX)}%</span></label>
-        <input type="range" min="0" max="100" step="1" value="${f.posX}" oninput="updateFacultySlider(${f.id},'posX',this.value)" />
+        <input type="range" min="0" max="100" step="1" value="${f.posX}" onpointerdown="lockFacultyCardDrag(event)" onpointerup="unlockFacultyCardDrag(event)" onpointercancel="unlockFacultyCardDrag(event)" onblur="unlockFacultyCardDrag(event)" oninput="updateFacultySlider(${f.id},'posX',this.value)" />
         <label>Vertical <span id="flbl-posY-${f.id}">${Math.round(f.posY)}%</span></label>
-        <input type="range" min="-25" max="25" step="1" value="${f.posY}" oninput="updateFacultySlider(${f.id},'posY',this.value)" />
+        <input type="range" min="-25" max="25" step="1" value="${f.posY}" onpointerdown="lockFacultyCardDrag(event)" onpointerup="unlockFacultyCardDrag(event)" onpointercancel="unlockFacultyCardDrag(event)" onblur="unlockFacultyCardDrag(event)" oninput="updateFacultySlider(${f.id},'posY',this.value)" />
         <label>Size <span id="flbl-scale-${f.id}">${Math.round(f.scale)}%</span></label>
-        <input type="range" min="60" max="400" step="1" value="${f.scale}" oninput="updateFacultySlider(${f.id},'scale',this.value)" />
+        <input type="range" min="60" max="400" step="1" value="${f.scale}" onpointerdown="lockFacultyCardDrag(event)" onpointerup="unlockFacultyCardDrag(event)" onpointercancel="unlockFacultyCardDrag(event)" onblur="unlockFacultyCardDrag(event)" oninput="updateFacultySlider(${f.id},'scale',this.value)" />
         <label>Brightness <span id="flbl-brightness-${f.id}">${Math.round(f.brightness || 100)}%</span></label>
-        <input type="range" min="20" max="200" step="1" value="${f.brightness || 100}" oninput="updateFacultySlider(${f.id},'brightness',this.value)" />
+        <input type="range" min="20" max="200" step="1" value="${f.brightness || 100}" onpointerdown="lockFacultyCardDrag(event)" onpointerup="unlockFacultyCardDrag(event)" onpointercancel="unlockFacultyCardDrag(event)" onblur="unlockFacultyCardDrag(event)" oninput="updateFacultySlider(${f.id},'brightness',this.value)" />
       </div>
     </div>
   `).join('');
