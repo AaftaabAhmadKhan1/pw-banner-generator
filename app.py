@@ -6,6 +6,7 @@
 
 import io
 import base64
+import os
 from collections import deque
 from pathlib import Path
 
@@ -13,6 +14,7 @@ from flask import Flask, render_template, send_from_directory, request, jsonify
 from PIL import Image, ImageFilter
 
 ROOT = Path(__file__).parent
+BG_REMOVE_API_URL = os.getenv("BG_REMOVE_API_URL", "").strip()
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
 app.config["MAX_CONTENT_LENGTH"] = 64 * 1024 * 1024  # 64 MB
@@ -232,7 +234,7 @@ def fallback_remove_background(image: Image.Image) -> Image.Image:
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("index.html", bg_remove_api_url=BG_REMOVE_API_URL)
 
 
 @app.route("/icon.jpg")

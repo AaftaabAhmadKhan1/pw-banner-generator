@@ -401,6 +401,13 @@
 </div>
 
 <script>
+const BG_REMOVE_API_URL = {{ bg_remove_api_url|tojson }};
+
+function getBgRemoveUrl(path) {
+  if (!BG_REMOVE_API_URL) return path;
+  return BG_REMOVE_API_URL.replace(/\/+$/, '') + path;
+}
+
 // ===== CONSTANTS =====
 let W = 1312, H = 656;
 const BANNER_DIMENSIONS = {
@@ -830,7 +837,8 @@ async function removeFacultyBg(id) {
   renderFacultyList();
   try {
     // Send original full-resolution image to preserve quality
-    const resp = await fetch('/api/remove-bg', {
+    const endpoint = getBgRemoveUrl('/api/remove-bg');
+    const resp = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ image: fac.originalDataUrl }),
