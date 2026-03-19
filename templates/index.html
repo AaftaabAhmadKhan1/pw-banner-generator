@@ -233,6 +233,19 @@
       <input type="range" min="30" max="200" step="1" value="100" id="textScaleSlider" oninput="onTextSlider('scale',this.value)" />
     </div>
 
+    <div class="section-title">Sub Heading</div>
+    <div class="form-group">
+      <input type="text" id="subHeadingInput" value="" placeholder="Enter sub heading" oninput="onSubHeadingInput(this.value,'main')" />
+    </div>
+    <div class="fc-sliders" id="subTextSliders">
+      <label>Horizontal <span id="sublbl-posX">50%</span></label>
+      <input type="range" min="0" max="100" step="1" value="50" id="subTextPosXSlider" oninput="onSubTextSlider('posX',this.value)" />
+      <label>Vertical <span id="sublbl-posY">44%</span></label>
+      <input type="range" min="0" max="90" step="1" value="44" id="subTextPosYSlider" oninput="onSubTextSlider('posY',this.value)" />
+      <label>Size <span id="sublbl-scale">100%</span></label>
+      <input type="range" min="30" max="200" step="1" value="100" id="subTextScaleSlider" oninput="onSubTextSlider('scale',this.value)" />
+    </div>
+
     <div class="section-title">Overlays</div>
     <div style="display:flex;gap:16px;margin-bottom:10px;">
       <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);">
@@ -290,103 +303,61 @@
         <button class="btn-add-faculty" type="button" onclick="openCustomTemplateUpload()">+ Upload Custom Template</button>
         <input type="file" id="customTemplateFileInput" accept="image/*" style="display:none" />
       </div>
-      <div class="template-grid" id="customTemplateGrid"></div>
-      <button type="button" class="overlay-toggle" id="customDetailsToggle" onclick="toggleCustomDetails()" style="margin-top:12px;">
-        <span>Show Custom Template Settings</span>
+      <button type="button" class="overlay-toggle" id="customStyleToggle" onclick="toggleCustomStyleControls()" style="margin-bottom:12px;">
+        <span>Show Custom Fill Colors</span>
         <span class="arrow">&#9662;</span>
       </button>
-      <div id="customDetailsSection" class="fc-sliders collapsed" style="padding-top:0;border-top:none;">
-
-      <div class="section-title">Batch Info</div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Batch Year</label>
-          <input type="text" id="batchYear" value="2027" oninput="render()" />
-        </div>
-        <div class="form-group">
-          <label>Class</label>
-          <select id="batchClass" onchange="render()">
-            <option>Class 11th</option><option>Class 12th</option><option selected>Class 11th & 12th</option><option>Dropper</option><option>Class 9th</option><option>Class 10th</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Exam / Target</label>
-          <select id="examTarget" onchange="render()"><option selected>NEET</option><option>JEE</option><option>CUET</option><option>Boards</option><option>Foundation</option><option>Olympiad</option><option>GATE</option><option>UPSC</option></select>
-        </div>
-        <div class="form-group">
-          <label>Stream / Subject</label>
-          <select id="stream" onchange="render()"><option selected>Science</option><option>Commerce</option><option>Arts / Humanities</option><option>Mathematics</option><option>Physics</option><option>Chemistry</option><option>Biology</option><option>General</option></select>
+      <div id="customStyleControls" class="fc-sliders collapsed" style="padding-top:0;border-top:none;">
+        <div class="color-row">
+          <div class="form-group">
+            <label>Info Box Fill</label>
+            <input type="color" id="customBoxFillColor" value="#9260a8" oninput="render()" />
+          </div>
+          <div class="form-group">
+            <label>Batch Name Fill</label>
+            <input type="color" id="customTitleColor" value="#ffffff" oninput="render()" />
+          </div>
+          <div class="form-group">
+            <label>Sub Heading Fill</label>
+            <input type="color" id="customSubHeadingColor" value="#ffffff" oninput="render()" />
+          </div>
         </div>
       </div>
-      <div class="form-group">
-        <label>Tagline</label>
-        <input type="text" id="tagline" value="Your Complete NEET Preparation" oninput="render()" />
+      <button type="button" class="overlay-toggle" id="customSamplesToggle" onclick="toggleCustomSamples()">
+        <span>Show Sample Templates</span>
+        <span class="arrow">&#9662;</span>
+      </button>
+      <div id="customTemplateGridWrap" class="fc-sliders collapsed" style="padding-top:0;border-top:none;">
+        <div class="template-grid" id="customTemplateGrid"></div>
       </div>
-      <div class="form-group">
-        <label>Language</label>
-        <select id="language" onchange="render()"><option selected>English Medium</option><option>Hindi Medium</option><option>Hinglish</option></select>
-      </div>
-
-      <div class="section-title">Features</div>
-      <div class="add-feature-row">
-        <input type="text" id="featureInput" placeholder="Type a feature..." onkeydown="if(event.key==='Enter'){addFeature()}" />
-        <button onclick="addFeature()">+ Add</button>
-      </div>
-      <div class="feature-tags" id="featureTags"></div>
-
-      <div class="section-title">Pricing</div>
-      <div class="form-row">
-        <div class="form-group"><label>Original Price</label><input type="text" id="originalPrice" value="12999" oninput="render()" /></div>
-        <div class="form-group"><label>Discounted Price</label><input type="text" id="discountPrice" value="5999" oninput="render()" /></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Badge Text</label><input type="text" id="badgeText" value="BEST SELLER" oninput="render()" /></div>
-        <div class="form-group"><label>Validity</label><input type="text" id="validity" value="1 Year Access" oninput="render()" /></div>
-      </div>
-
-      <div class="section-title">Teachers</div>
-      <div class="form-group">
-        <label>Teacher Names (comma separated)</label>
-        <input type="text" id="teachers" value="Alakh Pandey, Sachin Sir, Prashant Sir" oninput="render()" />
-      </div>
-
-      <div class="section-title">Design</div>
-      <div class="color-row">
-        <div class="form-group"><label>Primary</label><input type="color" id="colorPrimary" value="#7c3aed" oninput="render()" /></div>
-        <div class="form-group"><label>Secondary</label><input type="color" id="colorSecondary" value="#ec4899" oninput="render()" /></div>
-        <div class="form-group"><label>Accent</label><input type="color" id="colorAccent" value="#f59e0b" oninput="render()" /></div>
-      </div>
-      <div class="form-group">
-        <label>Logo / Brand Text</label>
-        <input type="text" id="logoText" value="PW" oninput="render()" />
-      </div>
-
-      <div class="section-title">Template Boxes</div>
-      <div style="display:flex;gap:16px;margin-bottom:10px;flex-wrap:wrap;">
-        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);">
-          <input type="checkbox" id="showCustomBadgeCheck" checked onchange="toggleCustomTemplateBox('badge',this.checked)" style="accent-color:var(--primary);" /> Promo Badge
-        </label>
-        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);">
-          <input type="checkbox" id="showCustomPriceCheck" checked onchange="toggleCustomTemplateBox('price',this.checked)" style="accent-color:var(--primary);" /> Price Box
-        </label>
-        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);">
-          <input type="checkbox" id="showCustomHeroCheck" checked onchange="toggleCustomTemplateBox('hero',this.checked)" style="accent-color:var(--primary);" /> Hero Box
-        </label>
-        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);">
-          <input type="checkbox" id="showCustomFooterCheck" checked onchange="toggleCustomTemplateBox('footer',this.checked)" style="accent-color:var(--primary);" /> Footer Box
-        </label>
-        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);">
-          <input type="checkbox" id="showCustomMetaCheck" checked onchange="toggleCustomTemplateBox('meta',this.checked)" style="accent-color:var(--primary);" /> Meta Box
-        </label>
-        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);">
-          <input type="checkbox" id="showCustomMeta1Check" checked onchange="toggleCustomTemplateBox('meta1',this.checked)" style="accent-color:var(--primary);" /> Meta Box 1
-        </label>
-        <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);">
-          <input type="checkbox" id="showCustomMeta2Check" checked onchange="toggleCustomTemplateBox('meta2',this.checked)" style="accent-color:var(--primary);" /> Meta Box 2
-        </label>
-      </div>
+      <div id="customDetailsSection" style="display:none;">
+        <input type="text" id="batchYear" value="" />
+        <select id="batchClass">
+          <option>Class 11th</option><option>Class 12th</option><option selected>Class 11th & 12th</option><option>Dropper</option><option>Class 9th</option><option>Class 10th</option>
+        </select>
+        <select id="examTarget"><option selected>NEET</option><option>JEE</option><option>CUET</option><option>Boards</option><option>Foundation</option><option>Olympiad</option><option>GATE</option><option>UPSC</option></select>
+        <select id="stream"><option selected>Science</option><option>Commerce</option><option>Arts / Humanities</option><option>Mathematics</option><option>Physics</option><option>Chemistry</option><option>Biology</option><option>General</option></select>
+        <input type="text" id="tagline" value="" />
+        <input type="text" id="customSubHeadingInput" value="" />
+        <select id="language"><option selected>English Medium</option><option>Hindi Medium</option><option>Hinglish</option></select>
+        <input type="text" id="featureInput" value="" />
+        <div class="feature-tags" id="featureTags" style="display:none;"></div>
+        <input type="text" id="originalPrice" value="" />
+        <input type="text" id="discountPrice" value="" />
+        <input type="text" id="badgeText" value="" />
+        <input type="text" id="validity" value="" />
+        <input type="text" id="teachers" value="" />
+        <input type="color" id="colorPrimary" value="#7c3aed" />
+        <input type="color" id="colorSecondary" value="#ec4899" />
+        <input type="color" id="colorAccent" value="#f59e0b" />
+        <input type="text" id="logoText" value="" />
+        <input type="checkbox" id="showCustomBadgeCheck" checked onchange="toggleCustomTemplateBox('badge',this.checked)" />
+        <input type="checkbox" id="showCustomPriceCheck" checked onchange="toggleCustomTemplateBox('price',this.checked)" />
+        <input type="checkbox" id="showCustomHeroCheck" checked onchange="toggleCustomTemplateBox('hero',this.checked)" />
+        <input type="checkbox" id="showCustomFooterCheck" checked onchange="toggleCustomTemplateBox('footer',this.checked)" />
+        <input type="checkbox" id="showCustomMetaCheck" checked onchange="toggleCustomTemplateBox('meta',this.checked)" />
+        <input type="checkbox" id="showCustomMeta1Check" checked onchange="toggleCustomTemplateBox('meta1',this.checked)" />
+        <input type="checkbox" id="showCustomMeta2Check" checked onchange="toggleCustomTemplateBox('meta2',this.checked)" />
       </div>
     </div>
 
@@ -487,7 +458,7 @@ const customTemplates = [
 ];
 
 // ===== STATE =====
-let features = ['Live Classes', 'DPPs & Notes', 'Test Series', 'Doubt Sessions'];
+let features = [];
 let currentTemplate = 'pw_1'; // default to PW template
 let bannerMode = 'pw';
 let facultyPhotos = [];
@@ -505,14 +476,19 @@ let draggedFacultyId = null;
 let dragFacultyId = null;
 let dragOffsetX = 0, dragOffsetY = 0;
 let draggingText = false;
+let draggingSubText = false;
 let draggingBox = false;
 let draggingCustomBox = null;
 let titleAutoCentered = true;
+let subHeadingAutoCentered = true;
 
 // Batch name text position (% of canvas) and scale (% of auto-size). null = auto.
 let textPosXPct = 50;  // horizontal %
 let textPosYPct = 25;  // vertical %
 let textScalePct = 100; // size %
+let subTextPosXPct = 50;
+let subTextPosYPct = 44;
+let subTextScalePct = 100;
 
 // Overlay state
 let showInfoBox = false;
@@ -530,6 +506,8 @@ let customBoxPositions = {};
 let boxControlsOpen = false;
 let tagControlsOpen = false;
 let customDetailsOpen = false;
+let customStyleOpen = false;
+let customSamplesOpen = false;
 const TAG_LOCKED_POS_X = 50;
 const TAG_LOCKED_POS_Y = 100;
 
@@ -548,6 +526,7 @@ const FACULTY_VISUAL_OVERLAP = 88;
 
 // Bounding box of the last rendered batch name text (for hit detection)
 let _lastTextBBox = null; // { x, y, w, h }
+let _lastSubTextBBox = null; // { x, y, w, h }
 let _lastBoxBBox = null; // { x, y, w, h }
 let _lastCustomBoxBBoxes = [];
 
@@ -570,6 +549,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initCropEvents();
   initEraseEvents();
   initCanvasDrag();
+  syncSubTextSliders();
   document.fonts.ready.then(() => render());
 });
 
@@ -630,6 +610,23 @@ function onTextSlider(field, value) {
   render();
 }
 
+function onSubHeadingInput(value, source) {
+  const mainInput = document.getElementById('subHeadingInput');
+  const customInput = document.getElementById('customSubHeadingInput');
+  if (source !== 'main' && mainInput) mainInput.value = value;
+  if (source !== 'custom' && customInput) customInput.value = value;
+  render();
+}
+
+function onSubTextSlider(field, value) {
+  const v = parseFloat(value);
+  subHeadingAutoCentered = false;
+  if (field === 'posX') { subTextPosXPct = v; document.getElementById('sublbl-posX').textContent = Math.round(v) + '%'; }
+  if (field === 'posY') { subTextPosYPct = v; document.getElementById('sublbl-posY').textContent = Math.round(v) + '%'; }
+  if (field === 'scale') { subTextScalePct = v; document.getElementById('sublbl-scale').textContent = Math.round(v) + '%'; }
+  render();
+}
+
 function syncTextSliders() {
   document.getElementById('textPosXSlider').value = textPosXPct;
   document.getElementById('textPosYSlider').value = textPosYPct;
@@ -637,6 +634,21 @@ function syncTextSliders() {
   document.getElementById('tlbl-posX').textContent = Math.round(textPosXPct) + '%';
   document.getElementById('tlbl-posY').textContent = Math.round(textPosYPct) + '%';
   document.getElementById('tlbl-scale').textContent = Math.round(textScalePct) + '%';
+}
+
+function syncSubTextSliders() {
+  const posX = document.getElementById('subTextPosXSlider');
+  const posY = document.getElementById('subTextPosYSlider');
+  const scale = document.getElementById('subTextScaleSlider');
+  if (posX) posX.value = subTextPosXPct;
+  if (posY) posY.value = subTextPosYPct;
+  if (scale) scale.value = subTextScalePct;
+  const lblX = document.getElementById('sublbl-posX');
+  const lblY = document.getElementById('sublbl-posY');
+  const lblScale = document.getElementById('sublbl-scale');
+  if (lblX) lblX.textContent = Math.round(subTextPosXPct) + '%';
+  if (lblY) lblY.textContent = Math.round(subTextPosYPct) + '%';
+  if (lblScale) lblScale.textContent = Math.round(subTextScalePct) + '%';
 }
 
 function syncBoxSliders() {
@@ -689,6 +701,38 @@ function toggleCustomDetails() {
   }
 }
 
+function toggleCustomSamples() {
+  customSamplesOpen = !customSamplesOpen;
+  const section = document.getElementById('customTemplateGridWrap');
+  const toggle = document.getElementById('customSamplesToggle');
+  if (section) section.classList.toggle('collapsed', !customSamplesOpen);
+  if (toggle) {
+    toggle.classList.toggle('open', customSamplesOpen);
+    const label = toggle.querySelector('span');
+    if (label) {
+      label.textContent = customSamplesOpen
+        ? 'Hide Sample Templates'
+        : 'Show Sample Templates';
+    }
+  }
+}
+
+function toggleCustomStyleControls() {
+  customStyleOpen = !customStyleOpen;
+  const section = document.getElementById('customStyleControls');
+  const toggle = document.getElementById('customStyleToggle');
+  if (section) section.classList.toggle('collapsed', !customStyleOpen);
+  if (toggle) {
+    toggle.classList.toggle('open', customStyleOpen);
+    const label = toggle.querySelector('span');
+    if (label) {
+      label.textContent = customStyleOpen
+        ? 'Hide Custom Fill Colors'
+        : 'Show Custom Fill Colors';
+    }
+  }
+}
+
 function toggleCustom() {
   const sec = document.getElementById('customSection');
   const arrow = document.getElementById('customArrow');
@@ -704,6 +748,7 @@ function toggleCustom() {
 function getState() {
   return {
     batchName: document.getElementById('batchName').value,
+    subHeading: document.getElementById('subHeadingInput').value,
     batchYear: document.getElementById('batchYear').value,
     batchClass: document.getElementById('batchClass').value,
     examTarget: document.getElementById('examTarget').value,
@@ -1398,6 +1443,19 @@ function initCanvasDrag() {
       }
     }
 
+    if (_lastSubTextBBox) {
+      const b = _lastSubTextBBox;
+      if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
+        draggingSubText = true;
+        subHeadingAutoCentered = false;
+        dragOffsetX = mx - (subTextPosXPct / 100) * W;
+        dragOffsetY = my - (subTextPosYPct / 100) * H;
+        canvas.style.cursor = 'grabbing';
+        e.preventDefault();
+        return;
+      }
+    }
+
     if (_lastBoxBBox && showInfoBox) {
       const b = _lastBoxBBox;
       if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
@@ -1451,6 +1509,15 @@ function initCanvasDrag() {
       textPosXPct = Math.max(0, Math.min(100, ((mx - dragOffsetX) / W) * 100));
       textPosYPct = Math.max(0, Math.min(80, ((my - dragOffsetY) / H) * 100));
       syncTextSliders();
+      render();
+      e.preventDefault();
+      return;
+    }
+
+    if (draggingSubText) {
+      subTextPosXPct = Math.max(0, Math.min(100, ((mx - dragOffsetX) / W) * 100));
+      subTextPosYPct = Math.max(0, Math.min(90, ((my - dragOffsetY) / H) * 100));
+      syncSubTextSliders();
       render();
       e.preventDefault();
       return;
@@ -1514,6 +1581,13 @@ function initCanvasDrag() {
       }
     }
 
+    if (!overSomething && _lastSubTextBBox) {
+      const b = _lastSubTextBBox;
+      if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
+        overSomething = true;
+      }
+    }
+
     if (!overSomething && !isPWTemplate() && findCustomBoxAt(mx, my)) overSomething = true;
 
     if (!overSomething) {
@@ -1535,6 +1609,10 @@ function initCanvasDrag() {
       draggingText = false;
       document.getElementById('bannerCanvas').style.cursor = 'default';
     }
+    if (draggingSubText) {
+      draggingSubText = false;
+      document.getElementById('bannerCanvas').style.cursor = 'default';
+    }
     if (draggingBox) {
       draggingBox = false;
       document.getElementById('bannerCanvas').style.cursor = 'default';
@@ -1552,6 +1630,10 @@ function initCanvasDrag() {
   canvas.addEventListener('mouseleave', () => {
     if (draggingText) {
       draggingText = false;
+      document.getElementById('bannerCanvas').style.cursor = 'default';
+    }
+    if (draggingSubText) {
+      draggingSubText = false;
       document.getElementById('bannerCanvas').style.cursor = 'default';
     }
     if (draggingBox) {
@@ -1664,6 +1746,27 @@ function drawFeaturePills(ctx,s,x,y,maxW){
 }
 
 function drawTeacherNames(ctx,s,x,y){if(!s.teachers.length)return;ctx.font="500 14px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.7);ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText('Faculty: '+s.teachers.join(' \u00b7 '),x,y);}
+function getFeatureSummaryText(s, separator='  •  '){return s.features&&s.features.length?s.features.join(separator):'Live Classes  •  Notes  •  Tests';}
+function fillWrappedText(ctx,text,x,y,maxWidth,lineHeight,maxLines=3){
+  const words=String(text||'').split(/\s+/).filter(Boolean);if(!words.length)return 0;
+  const lines=[];let line='';
+  for(let i=0;i<words.length;i++){
+    const test=line?`${line} ${words[i]}`:words[i];
+    if(ctx.measureText(test).width<=maxWidth||!line){line=test;continue;}
+    lines.push(line);
+    line=words[i];
+    if(lines.length===maxLines-1){
+      const remaining=words.slice(i).join(' ');
+      let truncated=remaining;
+      while(truncated.length>0&&ctx.measureText(`${truncated}...`).width>maxWidth){truncated=truncated.slice(0,-1);}
+      line=truncated?`${truncated}...`:'...';
+      break;
+    }
+  }
+  if(line)lines.push(line);
+  lines.slice(0,maxLines).forEach((entry,index)=>ctx.fillText(entry,x,y+(index*lineHeight)));
+  return Math.min(lines.length,maxLines)*lineHeight;
+}
 
 // ===== DRAW FACULTY PHOTOS ON CANVAS =====
 function getFacultyStripLayout(count) {
@@ -1709,39 +1812,13 @@ function drawFacultyPhotos(ctx, s) {
 }
 
 // ===== PW BANNER RENDERER =====
-function renderPW(ctx, s) {
-  const preset = pwPresets.find(p => p.id === currentTemplate);
-  if (!preset) return;
-
-  // Background: subtle vertical gradient
-  const bg = ctx.createLinearGradient(0, 0, 0, H);
-  bg.addColorStop(0, preset.bgTop);
-  bg.addColorStop(1, preset.bgBot);
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, W, H);
-
-  // Subtle radial highlight in center-top
-  const rg = ctx.createRadialGradient(W * 0.5, H * 0.3, 0, W * 0.5, H * 0.3, W * 0.5);
-  rg.addColorStop(0, 'rgba(255,255,255,0.08)');
-  rg.addColorStop(1, 'transparent');
-  ctx.fillStyle = rg;
-  ctx.fillRect(0, 0, W, H);
-
-  // Decorative circle in top-right (subtle, partially cut off)
-  ctx.save();
-  drawCircle(ctx, W - 80, -30, 180);
-  ctx.fillStyle = preset.circleColor;
-  ctx.fill();
-  ctx.restore();
-
-  // Draw faculty photos (behind text area, at bottom)
-  drawFacultyPhotos(ctx, s);
-
-  // Draw batch name text using Teko (upright, condensed, bold)
+function drawMainTitle(ctx, s) {
   const text = s.batchName.toUpperCase();
+  _lastTextBBox = null;
+  if (!text) return;
+  const preset = pwPresets.find(p => p.id === currentTemplate);
   ctx.save();
 
-  // Calculate base font size to fit text in banner width (reference images ~78px)
   const maxTextW = W - 120;
   let baseFontSize = 150;
   ctx.font = `500 ${baseFontSize}px 'Teko', sans-serif`;
@@ -1751,12 +1828,10 @@ function renderPW(ctx, s) {
     if (baseFontSize < 36) baseFontSize = 36;
   }
 
-  // Apply user scale
   const fontSize = Math.round(baseFontSize * (textScalePct / 100));
   ctx.font = `500 ${fontSize}px 'Teko', sans-serif`;
   textW = ctx.measureText(text).width;
 
-  // Word wrap if needed
   const lines = [];
   if (textW <= maxTextW) {
     lines.push(text);
@@ -1778,19 +1853,17 @@ function renderPW(ctx, s) {
   const lineHeight = fontSize * 1.08;
   const totalTextH = lines.length * lineHeight;
 
-  // Position from sliders (percentage-based)
   const textStartX = (textPosXPct / 100) * W;
   const textStartY = (textPosYPct / 100) * H;
 
-  // Measure max line width for bounding box
   let maxLineW = 0;
   for (const l of lines) {
     const lw = ctx.measureText(l).width;
     if (lw > maxLineW) maxLineW = lw;
   }
 
-  // Store bounding box for hit detection & drag
-  ctx.fillStyle = preset.text;
+  const customTitleColor = document.getElementById('customTitleColor')?.value || '#ffffff';
+  ctx.fillStyle = isPWTemplate() ? (preset?.text || '#111827') : customTitleColor;
   const resolvedTextX = titleAutoCentered ? (W / 2) - (maxLineW / 2) : textStartX;
   _lastTextBBox = {
     x: resolvedTextX,
@@ -1799,6 +1872,11 @@ function renderPW(ctx, s) {
     h: totalTextH
   };
 
+  if (!isPWTemplate()) {
+    ctx.shadowColor = 'rgba(0,0,0,0.28)';
+    ctx.shadowBlur = 18;
+    ctx.shadowOffsetY = 4;
+  }
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
 
@@ -1806,6 +1884,77 @@ function renderPW(ctx, s) {
     ctx.fillText(lines[i], resolvedTextX, textStartY + i * lineHeight);
   }
 
+  ctx.restore();
+}
+
+function renderPW(ctx, s) {
+  const preset = pwPresets.find(p => p.id === currentTemplate);
+  if (!preset) return;
+
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, preset.bgTop);
+  bg.addColorStop(1, preset.bgBot);
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  const rg = ctx.createRadialGradient(W * 0.5, H * 0.3, 0, W * 0.5, H * 0.3, W * 0.5);
+  rg.addColorStop(0, 'rgba(255,255,255,0.08)');
+  rg.addColorStop(1, 'transparent');
+  ctx.fillStyle = rg;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.save();
+  drawCircle(ctx, W - 80, -30, 180);
+  ctx.fillStyle = preset.circleColor;
+  ctx.fill();
+  ctx.restore();
+
+  drawFacultyPhotos(ctx, s);
+  drawMainTitle(ctx, s);
+}
+
+function drawSubHeading(ctx, s) {
+  const text = (s.subHeading || '').trim();
+  _lastSubTextBBox = null;
+  if (!text) return;
+
+  const preset = pwPresets.find(p => p.id === currentTemplate);
+  const customSubHeadingColor = document.getElementById('customSubHeadingColor')?.value || '#ffffff';
+  const fill = isPWTemplate() ? (preset?.text || '#111827') : customSubHeadingColor;
+  ctx.save();
+  const maxTextW = W - 180;
+  let baseFontSize = 38;
+  ctx.font = `700 ${baseFontSize}px 'Poppins', sans-serif`;
+  let measured = ctx.measureText(text).width;
+  if (measured > maxTextW) {
+    baseFontSize = Math.max(18, Math.floor(baseFontSize * (maxTextW / measured)));
+  }
+  const fontSize = Math.round(baseFontSize * (subTextScalePct / 100));
+  ctx.font = `700 ${fontSize}px 'Poppins', sans-serif`;
+  measured = ctx.measureText(text).width;
+
+  const drawX = subHeadingAutoCentered ? (W - measured) / 2 : (subTextPosXPct / 100) * W;
+  const drawY = (subTextPosYPct / 100) * H;
+  const metrics = ctx.measureText(text);
+  const ascent = metrics.actualBoundingBoxAscent || fontSize * 0.8;
+  const descent = metrics.actualBoundingBoxDescent || fontSize * 0.2;
+
+  _lastSubTextBBox = {
+    x: drawX,
+    y: drawY,
+    w: measured,
+    h: ascent + descent
+  };
+
+  ctx.fillStyle = fill;
+  if (!isPWTemplate()) {
+    ctx.shadowColor = 'rgba(0,0,0,0.18)';
+    ctx.shadowBlur = 10;
+    ctx.shadowOffsetY = 2;
+  }
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(text, drawX, drawY);
   ctx.restore();
 }
 
@@ -1876,21 +2025,6 @@ function renderDecorativeWaveSoft(ctx,s){
   drawWaves(ctx,rgba(s.colorSecondary,0.18),H*0.72,24,2.1);
   drawWaves(ctx,rgba('#ffffff',0.35),H*0.8,18,2.8);
   ctx.save();ctx.beginPath();ctx.moveTo(0,H*0.2);ctx.bezierCurveTo(W*0.16,H*0.08,W*0.32,H*0.34,W*0.52,H*0.22);ctx.bezierCurveTo(W*0.7,H*0.12,W*0.84,H*0.2,W,H*0.08);ctx.strokeStyle=rgba(s.colorPrimary,0.12);ctx.lineWidth=8;ctx.stroke();ctx.restore();
-  drawFacultyPhotos(ctx,s);
-  const heroRect = drawCustomPanel(ctx,'hero',44,38,420,158,30,rgba('#ffffff',0.74),rgba(s.colorPrimary,0.12),1.2);
-  const heroX = heroRect ? heroRect.x : 44;
-  const heroY = heroRect ? heroRect.y : 38;
-  drawLogo(ctx,s,62,56,44);drawBadge(ctx,s.badgeText,120,65,rgba(s.colorPrimary,0.15),s.colorPrimary,{key:'badge'});
-  ctx.font="900 56px 'Poppins',sans-serif";ctx.fillStyle='#0f172a';ctx.textAlign='left';ctx.textBaseline='top';
-  let ny=heroY+66;for(const l of measureText(ctx,s.batchName,340,ctx.font)){ctx.fillText(l,heroX+18,ny);ny+=62;}
-  ctx.font="500 18px 'Inter',sans-serif";ctx.fillStyle='rgba(15,23,42,0.68)';ctx.fillText(s.tagline,heroX+18,ny+4);
-  const footerRect = drawCustomPanel(ctx,'footer',48,H-96,W-96,52,22,rgba('#ffffff',0.72),rgba(s.colorPrimary,0.1),1);
-  const footerX = footerRect ? footerRect.x : 48;
-  const footerY = footerRect ? footerRect.y : H-96;
-  ctx.font="600 14px 'Inter',sans-serif";ctx.fillStyle='#1f2937';ctx.textAlign='left';ctx.textBaseline='middle';
-  const footerText=(s.features.slice(0,3).join('  •  ')||'Live classes  •  Notes  •  Tests');ctx.fillText(footerText,footerX+18,footerY+26);
-  const footerW = footerRect ? footerRect.w : (W-96);
-  ctx.font="500 13px 'Inter',sans-serif";ctx.fillStyle='rgba(15,23,42,0.55)';ctx.textAlign='right';ctx.fillText(s.examTarget+'  •  '+s.language,footerX+footerW-16,footerY+26);
 }
 
 function renderDecorativeWaveArc(ctx,s){
@@ -1901,27 +2035,6 @@ function renderDecorativeWaveArc(ctx,s){
   drawWaves(ctx,rgba('#ffffff',0.22),H*0.7,20,2.7);
   drawWaves(ctx,rgba('#000000',0.08),H*0.82,16,2.2);
   ctx.save();ctx.beginPath();ctx.moveTo(0,H*0.32);ctx.bezierCurveTo(W*0.26,H*0.1,W*0.46,H*0.46,W*0.76,H*0.24);ctx.bezierCurveTo(W*0.88,H*0.16,W*0.96,H*0.18,W,H*0.12);ctx.strokeStyle=rgba('#ffffff',0.18);ctx.lineWidth=4;ctx.stroke();ctx.restore();
-  drawFacultyPhotos(ctx,s);
-  const heroRect = drawCustomPanel(ctx,'hero',46,42,470,168,28,rgba('#0f172a',0.2),rgba('#ffffff',0.18),1);
-  const heroX = heroRect ? heroRect.x : 46;
-  const heroY = heroRect ? heroRect.y : 42;
-  drawLogo(ctx,s,64,60,44);drawBadge(ctx,s.badgeText,122,69,rgba('#ffffff',0.18),'#ffffff',{key:'badge'});
-  ctx.font="900 58px 'Poppins',sans-serif";ctx.fillStyle='#ffffff';ctx.textAlign='left';ctx.textBaseline='top';
-  let ny=heroY+66;for(const l of measureText(ctx,s.batchName,380,ctx.font)){ctx.fillText(l,heroX+18,ny);ny+=64;}
-  ctx.font="500 19px 'Inter',sans-serif";ctx.fillStyle='rgba(255,255,255,0.84)';ctx.fillText(s.tagline,heroX+18,ny+4);
-  const priceRect = drawCustomPanel(ctx,'price',W-286,48,228,88,24,rgba('#ffffff',0.14),rgba('#ffffff',0.18),1);
-  const priceX = priceRect ? priceRect.x : W-286;
-  const priceY = priceRect ? priceRect.y : 48;
-  ctx.font="900 36px 'Poppins',sans-serif";ctx.fillStyle='#ffffff';ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText('\u20B9'+s.discountPrice,priceX+22,priceY+16);
-  ctx.font="500 13px 'Inter',sans-serif";ctx.fillStyle='rgba(255,255,255,0.72)';ctx.fillText(s.batchClass+'  •  '+s.examTarget,priceX+22,priceY+60);
-  const footerRect = drawCustomPanel(ctx,'footer',52,H-108,W-104,60,24,rgba('#0f172a',0.22),rgba('#ffffff',0.18),1);
-  const footerX = footerRect ? footerRect.x : 52;
-  const footerY = footerRect ? footerRect.y : H-108;
-  const footerW = footerRect ? footerRect.w : (W-104);
-  ctx.font="600 14px 'Inter',sans-serif";ctx.fillStyle='#ffffff';ctx.textAlign='left';ctx.textBaseline='middle';
-  const bottomText=(s.features.slice(0,3).join('  •  ')||'Concept videos  •  Doubt support  •  Practice');
-  ctx.fillText(bottomText,footerX+20,footerY+30);
-  ctx.font="500 13px 'Inter',sans-serif";ctx.fillStyle='rgba(255,255,255,0.72)';ctx.textAlign='right';ctx.fillText(s.validity,footerX+footerW-20,footerY+30);
 }
 
 function renderRoyalGold(ctx,s){
@@ -1996,20 +2109,12 @@ function renderUploadedCustom(ctx,s){
   if(!uploaded||!uploaded.imageObj)return;
   drawImageCover(ctx,uploaded.imageObj,0,0,W,H);
   const shade=ctx.createLinearGradient(0,0,0,H);shade.addColorStop(0,'rgba(0,0,0,0.06)');shade.addColorStop(1,'rgba(0,0,0,0.18)');ctx.fillStyle=shade;ctx.fillRect(0,0,W,H);
-  drawFacultyPhotos(ctx,s);
-  const heroRect = drawCustomPanel(ctx,'hero',40,36,430,148,28,'rgba(255,255,255,0.72)','rgba(255,255,255,0.22)',1);
-  const heroX = heroRect ? heroRect.x : 40;
-  const heroY = heroRect ? heroRect.y : 36;
-  ctx.font="900 56px 'Poppins',sans-serif";ctx.fillStyle='#111827';ctx.textAlign='left';ctx.textBaseline='top';
-  let ny=heroY+30;for(const l of measureText(ctx,s.batchName||'Batch Banner',360,ctx.font)){ctx.fillText(l,heroX+22,ny);ny+=62;}
-  ctx.font="500 18px 'Inter',sans-serif";ctx.fillStyle='rgba(17,24,39,0.72)';ctx.fillText(s.tagline||'Custom banner template',heroX+22,ny+4);
 }
 
 // ===== OVERLAY HELPERS =====
 function getAutoOverlayText() {
-  if (features.length === 0) return 'Live Classes, DPPs & more';
-  if (features.length <= 3) return features.join(', ');
-  return features.slice(0, 2).join(', ') + ' & more';
+  if (features.length === 0) return 'Live Classes, DPPs, Notes, Tests';
+  return features.join(', ');
 }
 
 function toggleOverlay(type, checked) {
@@ -2059,13 +2164,20 @@ function drawBoxOverlay(ctx) {
   const text = (document.getElementById('boxTextInput') && document.getElementById('boxTextInput').value) || getAutoOverlayText();
   if (!text) return;
   const scale = boxScalePct / 100;
-  const fontSize = Math.round(42 * scale);
   const preset = getCurrentPWPreset();
+  const boxLabel = text.toUpperCase();
   ctx.save();
+  let fontSize = Math.round(42 * scale);
   ctx.font = `500 ${fontSize}px 'Teko', sans-serif`;
-  const tw = ctx.measureText(text).width;
   const horizontalPadding = 22 * scale;
-  const bw = Math.max(tw + horizontalPadding * 2, 132 * scale);
+  const maxBoxWidth = Math.max(180 * scale, W - (40 * scale));
+  let tw = ctx.measureText(boxLabel).width;
+  if (tw + horizontalPadding * 2 > maxBoxWidth) {
+    fontSize = Math.max(18, Math.floor(fontSize * ((maxBoxWidth - horizontalPadding * 2) / tw)));
+    ctx.font = `500 ${fontSize}px 'Teko', sans-serif`;
+    tw = ctx.measureText(boxLabel).width;
+  }
+  const bw = Math.min(Math.max(tw + horizontalPadding * 2, 132 * scale), maxBoxWidth);
   const bh = 86 * scale;
   const radius = 16 * scale;
   const cx = (boxPosXPct / 100) * W;
@@ -2074,10 +2186,10 @@ function drawBoxOverlay(ctx) {
   const y = cy - bh / 2;
   _lastBoxBBox = { x, y, w: bw, h: bh };
   drawRoundedRect(ctx, x, y, bw, bh, radius);
-  ctx.fillStyle = preset.boxFill || '#9260a8';
+  const customBoxFillColor = document.getElementById('customBoxFillColor')?.value || '#9260a8';
+  ctx.fillStyle = isPWTemplate() ? (preset.boxFill || '#9260a8') : customBoxFillColor;
   ctx.fill();
   ctx.fillStyle = preset.boxText || '#ffffff';
-  const boxLabel = text.toUpperCase();
   const boxMetrics = ctx.measureText(boxLabel);
   const boxAscent = boxMetrics.actualBoundingBoxAscent || fontSize * 0.72;
   const boxDescent = boxMetrics.actualBoundingBoxDescent || fontSize * 0.18;
@@ -2157,18 +2269,20 @@ function render() {
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, W, H);
   resetCustomBoxBBoxes();
+  _lastSubTextBBox = null;
   const s = getState();
 
   if (isPWTemplate()) {
     renderPW(ctx, s);
   } else {
-    _lastTextBBox = null; // no text drag for custom templates
     const currentCustomTemplate = getCurrentCustomTemplate();
     const rendererId = currentCustomTemplate?.renderer || s.template;
     const r = CUSTOM_RENDERERS[rendererId];
     if (r) r(ctx, s);
+    drawFacultyPhotos(ctx, s);
+    drawMainTitle(ctx, s);
   }
-  // Draw overlays on top of everything (box & tag)
+  drawSubHeading(ctx, s);
   drawBoxOverlay(ctx);
   drawTagOverlay(ctx);
 }
