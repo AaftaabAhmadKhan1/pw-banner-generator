@@ -1861,8 +1861,9 @@ function drawBoxOverlay(ctx) {
   ctx.save();
   ctx.font = `500 ${fontSize}px 'Teko', sans-serif`;
   const tw = ctx.measureText(text).width;
-  const bw = Math.max(tw + 68 * scale, 364 * scale);
-  const bh = 112 * scale;
+  const horizontalPadding = 22 * scale;
+  const bw = Math.max(tw + horizontalPadding * 2, 132 * scale);
+  const bh = 86 * scale;
   const radius = 16 * scale;
   const cx = (boxPosXPct / 100) * W;
   const cy = (boxPosYPct / 100) * H;
@@ -1873,9 +1874,14 @@ function drawBoxOverlay(ctx) {
   ctx.fillStyle = preset.boxFill || '#9260a8';
   ctx.fill();
   ctx.fillStyle = preset.boxText || '#ffffff';
+  const boxLabel = text.toUpperCase();
+  const boxMetrics = ctx.measureText(boxLabel);
+  const boxAscent = boxMetrics.actualBoundingBoxAscent || fontSize * 0.72;
+  const boxDescent = boxMetrics.actualBoundingBoxDescent || fontSize * 0.18;
+  const boxBaselineY = y + (bh / 2) + ((boxAscent - boxDescent) / 2) + (2 * scale);
   ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(text.toUpperCase(), cx, cy + 2 * scale);
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(boxLabel, cx, boxBaselineY);
   ctx.restore();
 }
 
