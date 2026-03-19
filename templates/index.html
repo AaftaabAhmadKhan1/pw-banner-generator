@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Batch Banner Generator</title>
   <link rel="icon" type="image/jpeg" href="/icon.jpg" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800;900&family=Oswald:wght@400;500;600;700&family=Barlow+Condensed:ital,wght@0,700;0,800;0,900;1,700;1,800;1,900&family=Teko:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Montserrat:wght@500;600&family=Poppins:wght@400;500;600;700;800;900&family=Oswald:wght@400;500;600;700&family=Barlow+Condensed:ital,wght@0,700;0,800;0,900;1,700;1,800;1,900&family=Teko:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #0a0a0f;
@@ -2112,7 +2112,7 @@ function renderUploadedCustom(ctx,s){
 
 // ===== OVERLAY HELPERS =====
 function getAutoOverlayText() {
-  if (features.length === 0) return 'Live Classes, DPPs, Notes, Tests';
+  if (features.length === 0) return 'Live Classes, DPPs & More';
   return features.join(', ');
 }
 
@@ -2209,7 +2209,7 @@ function drawTagOverlay(ctx) {
   const scale = tagScalePct / 100;
   const fontSize = Math.round(34 * scale);
   ctx.save();
-  ctx.font = `500 ${fontSize}px 'Teko', sans-serif`;
+  ctx.font = `500 ${fontSize}px 'Poppins', sans-serif`;
   const tw = ctx.measureText(text).width;
   const bw = Math.max(tw + 108 * scale, 554 * scale);
   const visibleHeight = 129 * scale;
