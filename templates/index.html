@@ -549,7 +549,11 @@ window.addEventListener('DOMContentLoaded', () => {
   initEraseEvents();
   initCanvasDrag();
   syncSubTextSliders();
-  document.fonts.ready.then(() => render());
+  Promise.allSettled([
+    document.fonts.ready,
+    document.fonts.load("500 34px 'Poppins'"),
+    document.fonts.load("500 42px 'Teko'"),
+  ]).then(() => render());
 });
 
 function getCurrentBannerDimensions() {
@@ -2207,9 +2211,9 @@ function drawTagOverlay(ctx) {
   const text = (document.getElementById('tagTextInput') && document.getElementById('tagTextInput').value) || getAutoOverlayText();
   if (!text) return;
   const scale = tagScalePct / 100;
-  const fontSize = Math.round(34 * scale);
+  const fontSize = Math.round(32 * scale);
   ctx.save();
-  ctx.font = `500 ${fontSize}px 'Poppins', sans-serif`;
+  ctx.font = `400 ${fontSize}px 'Poppins', sans-serif`;
   const tw = ctx.measureText(text).width;
   const bw = Math.max(tw + 108 * scale, 554 * scale);
   const visibleHeight = 129 * scale;
