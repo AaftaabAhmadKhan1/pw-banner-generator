@@ -350,7 +350,7 @@
     </div>
 
     <div style="margin-top:20px;">
-      <button class="btn btn-download" id="downloadBtn" onclick="downloadBanner()">Download PNG (1312 x 656)</button>
+      <button class="btn btn-download" id="downloadBtn" onclick="downloadBanner()">Download Banner</button>
     </div>
   </div>
 
@@ -529,7 +529,7 @@ function updateBannerDimensionUI() {
   const button = document.getElementById('downloadBtn');
   const ratio = (W / H).toFixed(2).replace(/\.00$/, '');
   if (label) label.innerHTML = `${W} x ${H} px &middot; ${ratio}:1 aspect ratio`;
-  if (button) button.textContent = `Download PNG (${W} x ${H})`;
+  if (button) button.textContent = 'Download Banner';
 }
 
 function applyBannerDimensions() {
@@ -1928,7 +1928,7 @@ function downloadBanner() {
   const canvas = document.getElementById('bannerCanvas');
   const link = document.createElement('a');
   const name = (document.getElementById('batchName').value.replace(/[^a-zA-Z0-9 ]/g,'').trim().replace(/\s+/g,'_') || 'banner');
-  link.download = name + `_${W}x${H}.png`;
+  link.download = `${name}.png`;
   link.href = canvas.toDataURL('image/png');
   link.click();
 }
