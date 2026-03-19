@@ -15,3 +15,5 @@ pw-service-22bdcc39f732.json
 *.secret.json
 
 .vercel/
+
+.vercel
