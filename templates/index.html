@@ -988,7 +988,9 @@ function renderFacultyList() {
         </button>
         `}
         <button class="fc-btn" onclick="openCrop(${f.id})">Crop</button>
+        ${LIVE_BG_REMOVAL_DISABLED ? '' : `
         <button class="fc-btn" onclick="openErase(${f.id})">Erase</button>
+        `}
         <button class="fc-btn" onclick="replaceFacultyPhoto(${f.id})">Replace</button>
       </div>
       <button class="fc-advanced-toggle ${f.controlsOpen ? 'open' : ''}" onclick="toggleFacultyControls(${f.id})">
