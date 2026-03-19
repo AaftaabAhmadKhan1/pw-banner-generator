@@ -276,6 +276,10 @@
       <span class="toggle-arrow collapsed" id="customArrow">&#9660;</span>
     </div>
     <div id="customSection" style="display:none;">
+      <div class="form-group" style="margin-bottom:12px;">
+        <button class="btn-add-faculty" type="button" onclick="openCustomTemplateUpload()">+ Upload Custom Template</button>
+        <input type="file" id="customTemplateFileInput" accept="image/*" style="display:none" />
+      </div>
       <div class="template-grid" id="customTemplateGrid"></div>
 
       <div class="section-title">Batch Info</div>
@@ -426,14 +430,12 @@ const pwPresets = [
 
 // ===== CUSTOM TEMPLATE PRESETS =====
 const customTemplates = [
-  { id:'gradient_burst', name:'Gradient Burst', colors:['#7c3aed','#ec4899'] },
-  { id:'modern_split',   name:'Modern Split',   colors:['#1e40af','#06b6d4'] },
-  { id:'neon_dark',      name:'Neon Dark',      colors:['#111827','#8b5cf6'] },
-  { id:'wave_flow',      name:'Wave Flow',      colors:['#059669','#34d399'] },
-  { id:'royal_gold',     name:'Royal Gold',     colors:['#1a1a2e','#f59e0b'] },
-  { id:'sunset_blaze',   name:'Sunset Blaze',   colors:['#dc2626','#f97316'] },
-  { id:'ocean_deep',     name:'Ocean Deep',     colors:['#0f172a','#0ea5e9'] },
-  { id:'clean_minimal',  name:'Clean Minimal',  colors:['#ffffff','#6366f1'] },
+  { id:'decorative_mist',  name:'Decorative Mist', colors:['#c7efff','#3498db'], renderer:'decorative_wave_soft' },
+  { id:'pearl_wave',       name:'Pearl Wave',     colors:['#e0ffff','#20b2aa'], renderer:'decorative_wave_soft' },
+  { id:'rose_ribbon',      name:'Rose Ribbon',    colors:['#ffddda','#fd7d7f'], renderer:'decorative_wave_soft' },
+  { id:'coral_arc',        name:'Coral Arc',      colors:['#ffb347','#cc8800'], renderer:'decorative_wave_arc' },
+  { id:'sapphire_arc',     name:'Sapphire Arc',   colors:['#e6e6fa','#8b5a9f'], renderer:'decorative_wave_arc' },
+  { id:'jade_arc',         name:'Jade Arc',       colors:['#c7ffe7','#2ecc71'], renderer:'decorative_wave_arc' },
 ];
 
 // ===== STATE =====
@@ -441,6 +443,7 @@ let features = ['Live Classes', 'DPPs & Notes', 'Test Series', 'Doubt Sessions']
 let currentTemplate = 'pw_1'; // default to PW template
 let bannerMode = 'pw';
 let facultyPhotos = [];
+let uploadedCustomTemplate = null;
 let _facId = 0;
 let _pendingFacultyId = null;
 
@@ -504,6 +507,7 @@ window.addEventListener('DOMContentLoaded', () => {
   syncOverlayControlStates();
   applyBannerDimensions();
   document.getElementById('facultyFileInput').addEventListener('change', onFacultyFileSelected);
+  document.getElementById('customTemplateFileInput').addEventListener('change', onCustomTemplateSelected);
   initCropEvents();
   initEraseEvents();
   initCanvasDrag();
@@ -642,6 +646,7 @@ function getState() {
     colorAccent: document.getElementById('colorAccent').value,
     logoText: document.getElementById('logoText').value,
     template: currentTemplate,
+    uploadedTemplate: uploadedCustomTemplate,
     faculty: facultyPhotos,
   };
 }
@@ -668,15 +673,21 @@ function selectPWTemplate(id) {
 
 // ===== CUSTOM TEMPLATE GRID =====
 function buildCustomTemplateGrid() {
-  document.getElementById('customTemplateGrid').innerHTML = customTemplates.map(t => `
+  const templatesToRender = uploadedCustomTemplate
+    ? [{ id: 'uploaded_custom', name: uploadedCustomTemplate.name, colors: uploadedCustomTemplate.colors, renderer: 'uploaded_custom', uploaded: true }, ...customTemplates]
+    : customTemplates;
+
+  document.getElementById('customTemplateGrid').innerHTML = templatesToRender.map(t => `
     <button class="template-btn ${t.id===currentTemplate?'active':''}" onclick="selectCustomTemplate('${t.id}')">
-      <div class="preview-bar" style="background:linear-gradient(135deg,${t.colors[0]},${t.colors[1]})"></div>${t.name}
+      <div class="preview-bar" style="${t.uploaded ? `background-image:url('${t.preview}');background-size:cover;background-position:center;` : `background:linear-gradient(135deg,${t.colors[0]},${t.colors[1]})`}"></div>${t.name}
     </button>`).join('');
 }
 
 function selectCustomTemplate(id) {
   currentTemplate = id;
-  const t = customTemplates.find(x => x.id === id);
+  const t = id === 'uploaded_custom'
+    ? uploadedCustomTemplate
+    : customTemplates.find(x => x.id === id);
   if (t) {
     document.getElementById('colorPrimary').value = t.colors[0];
     document.getElementById('colorSecondary').value = t.colors[1];
@@ -684,6 +695,47 @@ function selectCustomTemplate(id) {
   buildPWTemplateGrid();
   buildCustomTemplateGrid();
   render();
+}
+
+function getCurrentCustomTemplate() {
+  if (currentTemplate === 'uploaded_custom') return uploadedCustomTemplate;
+  return customTemplates.find(t => t.id === currentTemplate) || null;
+}
+
+function openCustomTemplateUpload() {
+  document.getElementById('customTemplateFileInput').click();
+}
+
+function onCustomTemplateSelected(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  e.target.value = '';
+
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const dataUrl = ev.target.result;
+    const img = new Image();
+    img.onload = function() {
+      const avg = sampleImagePalette(img);
+      uploadedCustomTemplate = {
+        id: 'uploaded_custom',
+        name: 'Uploaded Template',
+        colors: avg,
+        renderer: 'uploaded_custom',
+        preview: dataUrl,
+        imageSrc: dataUrl,
+        imageObj: img,
+      };
+      currentTemplate = 'uploaded_custom';
+      document.getElementById('colorPrimary').value = avg[0];
+      document.getElementById('colorSecondary').value = avg[1];
+      buildPWTemplateGrid();
+      buildCustomTemplateGrid();
+      render();
+    };
+    img.src = dataUrl;
+  };
+  reader.readAsDataURL(file);
 }
 
 // ===== FACULTY PHOTO MANAGEMENT =====
@@ -1341,6 +1393,19 @@ function drawDots(ctx,c,n){for(let i=0;i<n;i++){drawCircle(ctx,Math.random()*W,M
 function drawGrid(ctx,c){ctx.strokeStyle=rgba(c,0.04);ctx.lineWidth=1;for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}}
 function drawWaves(ctx,c,yB,amp,waves){ctx.beginPath();ctx.moveTo(0,H);ctx.lineTo(0,yB);for(let x=0;x<=W;x+=2)ctx.lineTo(x,yB+Math.sin((x/W)*Math.PI*waves)*amp);ctx.lineTo(W,H);ctx.closePath();ctx.fillStyle=c;ctx.fill();}
 function drawDiagonalStripes(ctx,c){ctx.save();ctx.strokeStyle=rgba(c,0.04);ctx.lineWidth=1;for(let i=-H;i<W+H;i+=30){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i+H,H);ctx.stroke();}ctx.restore();}
+function rgbToHex(r,g,b){return'#'+[r,g,b].map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');}
+function sampleImagePalette(img){
+  const c=document.createElement('canvas');const side=32;c.width=side;c.height=side;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(img,0,0,side,side);
+  const d=x.getImageData(0,0,side,side).data;let r1=0,g1=0,b1=0,r2=0,g2=0,b2=0,n1=0,n2=0;
+  for(let i=0;i<d.length;i+=4){const px=(i/4)%side;if(px<side/2){r1+=d[i];g1+=d[i+1];b1+=d[i+2];n1++;}else{r2+=d[i];g2+=d[i+1];b2+=d[i+2];n2++;}}
+  return [rgbToHex(r1/n1,g1/n1,b1/n1), rgbToHex(r2/n2,g2/n2,b2/n2)];
+}
+function drawImageCover(ctx,img,x,y,w,h){
+  const scale=Math.max(w/img.naturalWidth,h/img.naturalHeight);
+  const dw=img.naturalWidth*scale, dh=img.naturalHeight*scale;
+  const dx=x+(w-dw)/2, dy=y+(h-dh)/2;
+  ctx.drawImage(img,dx,dy,dw,dh);
+}
 
 function drawLogo(ctx,s,x,y,sz){
   ctx.save();drawRoundedRect(ctx,x,y,sz,sz,sz*0.22);ctx.fillStyle=rgba('#ffffff',0.15);ctx.fill();ctx.strokeStyle=rgba('#ffffff',0.25);ctx.lineWidth=1.5;ctx.stroke();
@@ -1576,6 +1641,49 @@ function renderWaveFlow(ctx,s){
   ctx.font="500 13px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.5);ctx.textAlign='right';ctx.fillText(s.language+' \u00b7 '+s.validity,W-50,H-30);
 }
 
+function renderDecorativeWaveSoft(ctx,s){
+  const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#ffffff');g.addColorStop(0.42,rgba(s.colorSecondary,0.18));g.addColorStop(1,rgba(s.colorPrimary,0.14));ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  const glow=ctx.createRadialGradient(W*0.18,H*0.18,0,W*0.18,H*0.18,W*0.55);glow.addColorStop(0,rgba('#ffffff',0.95));glow.addColorStop(1,'transparent');ctx.fillStyle=glow;ctx.fillRect(0,0,W,H);
+  drawWaves(ctx,rgba(s.colorPrimary,0.16),H*0.64,32,2.6);
+  drawWaves(ctx,rgba(s.colorSecondary,0.18),H*0.72,24,2.1);
+  drawWaves(ctx,rgba('#ffffff',0.35),H*0.8,18,2.8);
+  ctx.save();ctx.beginPath();ctx.moveTo(0,H*0.2);ctx.bezierCurveTo(W*0.16,H*0.08,W*0.32,H*0.34,W*0.52,H*0.22);ctx.bezierCurveTo(W*0.7,H*0.12,W*0.84,H*0.2,W,H*0.08);ctx.strokeStyle=rgba(s.colorPrimary,0.12);ctx.lineWidth=8;ctx.stroke();ctx.restore();
+  drawFacultyPhotos(ctx,s);
+  drawRoundedRect(ctx,44,38,420,158,30);ctx.fillStyle=rgba('#ffffff',0.74);ctx.fill();ctx.strokeStyle=rgba(s.colorPrimary,0.12);ctx.lineWidth=1.2;ctx.stroke();
+  drawLogo(ctx,s,62,56,44);drawBadge(ctx,s.badgeText,120,65,rgba(s.colorPrimary,0.15),s.colorPrimary);
+  ctx.font="900 56px 'Poppins',sans-serif";ctx.fillStyle='#0f172a';ctx.textAlign='left';ctx.textBaseline='top';
+  let ny=104;for(const l of measureText(ctx,s.batchName,340,ctx.font)){ctx.fillText(l,62,ny);ny+=62;}
+  ctx.font="500 18px 'Inter',sans-serif";ctx.fillStyle='rgba(15,23,42,0.68)';ctx.fillText(s.tagline,62,ny+4);
+  drawRoundedRect(ctx,48,H-96,W-96,52,22);ctx.fillStyle=rgba('#ffffff',0.72);ctx.fill();ctx.strokeStyle=rgba(s.colorPrimary,0.1);ctx.lineWidth=1;ctx.stroke();
+  ctx.font="600 14px 'Inter',sans-serif";ctx.fillStyle='#1f2937';ctx.textAlign='left';ctx.textBaseline='middle';
+  const footerText=(s.features.slice(0,3).join('  •  ')||'Live classes  •  Notes  •  Tests');ctx.fillText(footerText,66,H-70);
+  ctx.font="500 13px 'Inter',sans-serif";ctx.fillStyle='rgba(15,23,42,0.55)';ctx.textAlign='right';ctx.fillText(s.examTarget+'  •  '+s.language,W-64,H-70);
+}
+
+function renderDecorativeWaveArc(ctx,s){
+  const g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,rgba(s.colorPrimary,0.96));g.addColorStop(1,rgba(s.colorSecondary,0.9));ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  ctx.save();ctx.beginPath();ctx.arc(W*0.12,H*0.05,W*0.34,0,Math.PI*2);ctx.fillStyle=rgba('#ffffff',0.1);ctx.fill();ctx.restore();
+  ctx.save();ctx.beginPath();ctx.arc(W*0.82,H*0.96,W*0.38,0,Math.PI*2);ctx.fillStyle=rgba('#ffffff',0.08);ctx.fill();ctx.restore();
+  drawWaves(ctx,rgba('#ffffff',0.14),H*0.58,26,2.2);
+  drawWaves(ctx,rgba('#ffffff',0.22),H*0.7,20,2.7);
+  drawWaves(ctx,rgba('#000000',0.08),H*0.82,16,2.2);
+  ctx.save();ctx.beginPath();ctx.moveTo(0,H*0.32);ctx.bezierCurveTo(W*0.26,H*0.1,W*0.46,H*0.46,W*0.76,H*0.24);ctx.bezierCurveTo(W*0.88,H*0.16,W*0.96,H*0.18,W,H*0.12);ctx.strokeStyle=rgba('#ffffff',0.18);ctx.lineWidth=4;ctx.stroke();ctx.restore();
+  drawFacultyPhotos(ctx,s);
+  drawRoundedRect(ctx,46,42,470,168,28);ctx.fillStyle=rgba('#0f172a',0.2);ctx.fill();ctx.strokeStyle=rgba('#ffffff',0.18);ctx.lineWidth=1;ctx.stroke();
+  drawLogo(ctx,s,64,60,44);drawBadge(ctx,s.badgeText,122,69,rgba('#ffffff',0.18),'#ffffff');
+  ctx.font="900 58px 'Poppins',sans-serif";ctx.fillStyle='#ffffff';ctx.textAlign='left';ctx.textBaseline='top';
+  let ny=108;for(const l of measureText(ctx,s.batchName,380,ctx.font)){ctx.fillText(l,64,ny);ny+=64;}
+  ctx.font="500 19px 'Inter',sans-serif";ctx.fillStyle='rgba(255,255,255,0.84)';ctx.fillText(s.tagline,64,ny+4);
+  drawRoundedRect(ctx,W-286,48,228,88,24);ctx.fillStyle=rgba('#ffffff',0.14);ctx.fill();ctx.strokeStyle=rgba('#ffffff',0.18);ctx.lineWidth=1;ctx.stroke();
+  ctx.font="900 36px 'Poppins',sans-serif";ctx.fillStyle='#ffffff';ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText('\u20B9'+s.discountPrice,W-264,64);
+  ctx.font="500 13px 'Inter',sans-serif";ctx.fillStyle='rgba(255,255,255,0.72)';ctx.fillText(s.batchClass+'  •  '+s.examTarget,W-264,108);
+  drawRoundedRect(ctx,52,H-108,W-104,60,24);ctx.fillStyle=rgba('#0f172a',0.22);ctx.fill();ctx.strokeStyle=rgba('#ffffff',0.18);ctx.lineWidth=1;ctx.stroke();
+  ctx.font="600 14px 'Inter',sans-serif";ctx.fillStyle='#ffffff';ctx.textAlign='left';ctx.textBaseline='middle';
+  const bottomText=(s.features.slice(0,3).join('  •  ')||'Concept videos  •  Doubt support  •  Practice');
+  ctx.fillText(bottomText,72,H-78);
+  ctx.font="500 13px 'Inter',sans-serif";ctx.fillStyle='rgba(255,255,255,0.72)';ctx.textAlign='right';ctx.fillText(s.validity,W-72,H-78);
+}
+
 function renderRoyalGold(ctx,s){
   ctx.fillStyle='#0d0d1a';ctx.fillRect(0,0,W,H);
   const tg=ctx.createLinearGradient(0,0,W,0);tg.addColorStop(0,rgba(s.colorAccent,0.15));tg.addColorStop(0.5,rgba(s.colorAccent,0.05));tg.addColorStop(1,rgba(s.colorAccent,0.15));ctx.fillStyle=tg;ctx.fillRect(0,0,W,6);
@@ -1641,6 +1749,18 @@ function renderCleanMinimal(ctx,s){
     ctx.font="600 13px 'Inter',sans-serif";ctx.fillStyle='#374151';ctx.fillText(feat,cx+28,cy+pH2/2);cx+=pW+8;}
   ctx.font="500 14px 'Inter',sans-serif";ctx.fillStyle='#6b7280';ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText('Faculty: '+s.teachers.join(' \u00b7 '),45,H-45);
   ctx.font="500 13px 'Inter',sans-serif";ctx.fillStyle='#9ca3af';ctx.textAlign='right';ctx.fillText(s.stream+' \u00b7 '+s.language+' \u00b7 '+s.validity,W-40,H-45);
+}
+
+function renderUploadedCustom(ctx,s){
+  const uploaded=s.uploadedTemplate;
+  if(!uploaded||!uploaded.imageObj)return;
+  drawImageCover(ctx,uploaded.imageObj,0,0,W,H);
+  const shade=ctx.createLinearGradient(0,0,0,H);shade.addColorStop(0,'rgba(0,0,0,0.06)');shade.addColorStop(1,'rgba(0,0,0,0.18)');ctx.fillStyle=shade;ctx.fillRect(0,0,W,H);
+  drawFacultyPhotos(ctx,s);
+  drawRoundedRect(ctx,40,36,430,148,28);ctx.fillStyle='rgba(255,255,255,0.72)';ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.22)';ctx.lineWidth=1;ctx.stroke();
+  ctx.font="900 56px 'Poppins',sans-serif";ctx.fillStyle='#111827';ctx.textAlign='left';ctx.textBaseline='top';
+  let ny=66;for(const l of measureText(ctx,s.batchName||'Batch Banner',360,ctx.font)){ctx.fillText(l,62,ny);ny+=62;}
+  ctx.font="500 18px 'Inter',sans-serif";ctx.fillStyle='rgba(17,24,39,0.72)';ctx.fillText(s.tagline||'Custom banner template',62,ny+4);
 }
 
 // ===== OVERLAY HELPERS =====
@@ -1771,10 +1891,13 @@ function drawTagOverlay(ctx) {
 
 // ===== MAIN RENDER =====
 const CUSTOM_RENDERERS = {
+  uploaded_custom: renderUploadedCustom,
   gradient_burst: renderGradientBurst,
   modern_split: renderModernSplit,
   neon_dark: renderNeonDark,
   wave_flow: renderWaveFlow,
+  decorative_wave_soft: renderDecorativeWaveSoft,
+  decorative_wave_arc: renderDecorativeWaveArc,
   royal_gold: renderRoyalGold,
   sunset_blaze: renderSunsetBlaze,
   ocean_deep: renderOceanDeep,
@@ -1791,7 +1914,9 @@ function render() {
     renderPW(ctx, s);
   } else {
     _lastTextBBox = null; // no text drag for custom templates
-    const r = CUSTOM_RENDERERS[s.template];
+    const currentCustomTemplate = getCurrentCustomTemplate();
+    const rendererId = currentCustomTemplate?.renderer || s.template;
+    const r = CUSTOM_RENDERERS[rendererId];
     if (r) r(ctx, s);
   }
   // Draw overlays on top of everything (box & tag)
