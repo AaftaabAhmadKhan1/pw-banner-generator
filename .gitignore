@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+
+server.out.log
+server.err.log
+outputs/
+
+pw-service-22bdcc39f732.json
+*.secret.json
+
+.vercel/

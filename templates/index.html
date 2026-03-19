@@ -1,0 +1,1813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Batch Banner Generator</title>
+  <link rel="icon" type="image/jpeg" href="/icon.jpg" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800;900&family=Oswald:wght@400;500;600;700&family=Barlow+Condensed:ital,wght@0,700;0,800;0,900;1,700;1,800;1,900&family=Teko:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #12121a;
+      --surface-2: #1a1a28;
+      --surface-3: #22223a;
+      --border: #2a2a44;
+      --border-hover: #4a4a6a;
+      --text: #e8e8f0;
+      --text-muted: #8888aa;
+      --primary: #7c5cfc;
+      --primary-glow: rgba(124, 92, 252, 0.15);
+      --accent: #ff6b6b;
+      --success: #4ade80;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Inter',-apple-system,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+    .header { padding:16px 24px; border-bottom:1px solid var(--border); background:var(--surface); display:flex; align-items:center; justify-content:space-between; }
+    .header-brand { display:flex; align-items:center; gap:12px; }
+    .header-logo {
+      width:42px;
+      height:42px;
+      border-radius:12px;
+      object-fit:cover;
+      box-shadow:0 10px 24px rgba(0,0,0,0.28);
+      border:1px solid rgba(255,255,255,0.08);
+    }
+    .header h1 { font-size:18px; font-weight:700; background:linear-gradient(135deg,var(--primary),#ff6b9d); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .header .subtitle { font-size:12px; color:var(--text-muted); }
+    .header-action {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      padding:10px 16px;
+      border-radius:999px;
+      border:1px solid rgba(124, 92, 252, 0.35);
+      background:linear-gradient(135deg, rgba(124, 92, 252, 0.22), rgba(255, 107, 157, 0.18));
+      color:var(--text);
+      text-decoration:none;
+      font-size:12px;
+      font-weight:700;
+      letter-spacing:0.02em;
+      box-shadow:0 10px 30px rgba(124, 92, 252, 0.16);
+      transition:transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+    .header-action:hover {
+      transform:translateY(-1px);
+      border-color:rgba(124, 92, 252, 0.55);
+      box-shadow:0 16px 36px rgba(124, 92, 252, 0.24);
+    }
+    .main-layout { display:grid; grid-template-columns:400px 1fr; height:calc(100vh - 57px); }
+    .panel { background:var(--surface); border-right:1px solid var(--border); overflow-y:auto; padding:20px; }
+    .panel::-webkit-scrollbar { width:6px; }
+    .panel::-webkit-scrollbar-track { background:transparent; }
+    .panel::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+    .section-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-muted); margin:20px 0 12px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+    .section-title:first-child { margin-top:0; }
+    .section-title .toggle-arrow { float:right; cursor:pointer; font-size:14px; transition:transform 0.2s; }
+    .section-title .toggle-arrow.collapsed { transform:rotate(-90deg); }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+    .form-group { margin-bottom:10px; }
+    .form-group.full { grid-column:1/-1; }
+    label { display:block; font-size:12px; font-weight:500; color:var(--text-muted); margin-bottom:4px; }
+    input,select,textarea { width:100%; padding:8px 10px; background:var(--surface-2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:inherit; font-size:13px; transition:border-color 0.2s; }
+    input:focus,select:focus,textarea:focus { outline:none; border-color:var(--primary); }
+    textarea { resize:vertical; min-height:60px; }
+    input[type="color"] { padding:2px; height:36px; cursor:pointer; }
+    .color-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+    .template-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .template-btn { padding:10px 8px; background:var(--surface-2); border:2px solid var(--border); border-radius:8px; color:var(--text); cursor:pointer; font-size:11px; font-weight:600; font-family:inherit; text-align:center; transition:all 0.2s; }
+    .template-btn:hover { border-color:var(--border-hover); background:var(--surface-3); }
+    .template-btn.active { border-color:var(--primary); background:var(--primary-glow); }
+    .template-btn .preview-bar { height:24px; border-radius:4px; margin-bottom:6px; }
+    .btn { padding:10px 20px; border:none; border-radius:8px; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s; }
+    .btn-primary { background:var(--primary); color:white; width:100%; }
+    .btn-primary:hover { background:#6a4ae8; }
+    .btn-download { background:linear-gradient(135deg,#4ade80,#22c55e); color:#000; width:100%; margin-top:8px; }
+    .btn-download:hover { opacity:0.9; }
+    .preview-area { display:flex; flex-direction:column; align-items:center; justify-content:center; background:#08080e; padding:30px; overflow:auto; }
+    .canvas-wrap { border-radius:8px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.5); max-width:100%; }
+    #bannerCanvas { display:block; max-width:100%; height:auto; cursor:default; }
+    .size-label { font-size:11px; color:var(--text-muted); margin-top:12px; }
+    .feature-tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+    .feature-tag { background:var(--surface-3); border:1px solid var(--border); padding:3px 8px; border-radius:4px; font-size:11px; color:var(--text); display:flex; align-items:center; gap:4px; }
+    .feature-tag .remove { cursor:pointer; color:var(--accent); font-weight:bold; }
+    .add-feature-row { display:flex; gap:6px; }
+    .add-feature-row input { flex:1; }
+    .add-feature-row button { padding:8px 12px; background:var(--surface-3); border:1px solid var(--border); color:var(--text); border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; white-space:nowrap; }
+
+    /* Faculty Cards */
+    .faculty-card { background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:10px; position:relative; cursor:grab; }
+    .faculty-card.dragging { opacity:0.5; border-color:var(--primary); }
+    .faculty-card.drag-target { border-color:var(--primary); box-shadow:0 0 0 1px var(--primary-glow) inset; }
+    .faculty-card .fc-header { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+    .faculty-card .fc-thumb { width:56px; height:56px; border-radius:8px; background:var(--surface-3); overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+    .faculty-card .fc-thumb img { width:100%; height:100%; object-fit:cover; }
+    .faculty-card .fc-info { flex:1; min-width:0; }
+    .faculty-card .fc-name { font-size:13px; font-weight:600; margin-bottom:4px; }
+    .faculty-card .fc-status { font-size:11px; color:var(--text-muted); }
+    .faculty-card .fc-remove { position:absolute; top:8px; right:8px; background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:16px; padding:2px 6px; border-radius:4px; }
+    .faculty-card .fc-remove:hover { background:rgba(255,100,100,0.15); color:var(--accent); }
+    .faculty-card .fc-order { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+    .faculty-card .fc-position { font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-muted); }
+    .faculty-card .fc-drag-handle { font-size:11px; color:var(--text-muted); border:1px dashed var(--border); border-radius:999px; padding:4px 8px; }
+    .faculty-card .fc-actions { display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap; }
+    .faculty-card .fc-advanced-toggle { display:flex; align-items:center; justify-content:space-between; width:100%; padding:8px 10px; background:var(--surface-3); border:1px solid var(--border); color:var(--text); border-radius:6px; cursor:pointer; font-size:11px; font-weight:700; font-family:inherit; margin-top:2px; }
+    .faculty-card .fc-advanced-toggle .arrow { transition:transform 0.2s ease; }
+    .faculty-card .fc-advanced-toggle.open .arrow { transform:rotate(180deg); }
+    .overlay-toggle { display:flex; align-items:center; justify-content:space-between; width:100%; padding:8px 10px; background:var(--surface-3); border:1px solid var(--border); color:var(--text); border-radius:6px; cursor:pointer; font-size:11px; font-weight:700; font-family:inherit; margin-bottom:8px; }
+    .overlay-toggle .arrow { transition:transform 0.2s ease; }
+    .overlay-toggle.open .arrow { transform:rotate(180deg); }
+    .fc-btn { padding:5px 10px; background:var(--surface-3); border:1px solid var(--border); color:var(--text); border-radius:5px; cursor:pointer; font-size:11px; font-weight:600; font-family:inherit; transition:all 0.15s; }
+    .fc-btn:hover { border-color:var(--primary); }
+    .fc-btn.loading { opacity:0.5; pointer-events:none; }
+    .fc-btn.done { border-color:var(--success); color:var(--success); }
+    .fc-sliders { margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+    .fc-sliders.collapsed { display:none; }
+    .fc-sliders label { font-size:11px; color:var(--text-muted); margin-bottom:2px; display:flex; justify-content:space-between; }
+    .fc-sliders input[type="range"] { width:100%; height:6px; -webkit-appearance:none; background:var(--surface-3); border-radius:3px; border:none; outline:none; padding:0; margin:4px 0 8px; }
+    .fc-sliders input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:var(--primary); cursor:pointer; }
+    .btn-add-faculty { width:100%; padding:10px; background:var(--surface-2); border:2px dashed var(--border); border-radius:8px; color:var(--text-muted); cursor:pointer; font-family:inherit; font-size:12px; font-weight:600; transition:all 0.2s; }
+    .btn-add-faculty:hover { border-color:var(--primary); color:var(--text); }
+
+    /* Crop Modal */
+    .crop-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:1000; display:none; flex-direction:column; align-items:center; justify-content:center; }
+    .crop-overlay.show { display:flex; }
+    .crop-header { color:#fff; font-size:16px; font-weight:600; margin-bottom:16px; }
+    .crop-container { position:relative; max-width:80vw; max-height:65vh; cursor:crosshair; }
+    .crop-container img { display:block; max-width:80vw; max-height:65vh; }
+    .crop-container canvas { position:absolute; top:0; left:0; width:100%; height:100%; }
+    .crop-preview-wrap { display:flex; align-items:center; gap:20px; margin-top:16px; }
+    .crop-preview-box { width:120px; height:60px; border:2px solid var(--border); border-radius:6px; overflow:hidden; background:var(--surface-2); }
+    .crop-preview-box img { width:100%; height:100%; object-fit:cover; }
+    .crop-buttons { display:flex; gap:10px; margin-top:16px; }
+    .crop-buttons button { padding:10px 24px; border:none; border-radius:8px; font-family:inherit; font-size:14px; font-weight:600; cursor:pointer; }
+    .crop-btn-apply { background:var(--primary); color:#fff; }
+    .crop-btn-cancel { background:var(--surface-3); color:var(--text); }
+    .crop-btn-reset { background:var(--surface-3); color:var(--accent); }
+
+    /* Erase Modal */
+    .erase-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:1001; display:none; flex-direction:column; align-items:center; justify-content:center; }
+    .erase-overlay.show { display:flex; }
+    .erase-header { color:#fff; font-size:16px; font-weight:600; margin-bottom:10px; }
+    .erase-controls { display:flex; align-items:center; gap:16px; margin-bottom:12px; }
+    .erase-controls label { color:var(--text-muted); font-size:12px; font-weight:500; white-space:nowrap; }
+    .erase-controls input[type="range"] { width:160px; height:6px; -webkit-appearance:none; background:var(--surface-3); border-radius:3px; border:none; outline:none; padding:0; }
+    .erase-controls input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:var(--primary); cursor:pointer; }
+    .erase-canvas-wrap { position:relative; background:repeating-conic-gradient(#555 0% 25%, #333 0% 50%) 0 0/20px 20px; border-radius:6px; overflow:hidden; cursor:none; line-height:0; }
+    .erase-canvas-wrap canvas { display:block; max-width:80vw; max-height:60vh; }
+    .erase-buttons { display:flex; gap:10px; margin-top:14px; }
+    .erase-buttons button { padding:10px 22px; border:none; border-radius:8px; font-family:inherit; font-size:14px; font-weight:600; cursor:pointer; }
+    .erase-btn-apply { background:var(--primary); color:#fff; }
+    .erase-btn-cancel { background:var(--surface-3); color:var(--text); }
+    .erase-btn-undo { background:var(--surface-3); color:#facc15; }
+    .erase-btn-reset { background:var(--surface-3); color:var(--accent); }
+
+    .drag-hint { font-size:11px; color:var(--text-muted); margin-top:6px; font-style:italic; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-brand">
+    <img class="header-logo" src="/icon.jpg" alt="Batch Banner Generator logo" />
+    <div>
+    <h1>Batch Banner Generator</h1>
+    </div>
+  </div>
+  <a
+    class="header-action"
+    href="https://drive.google.com/drive/folders/1HKFrp5LiZq0lpLAkSnHW2qtZQebkO7DI"
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    Download Faculty Images
+  </a>
+</div>
+
+<div class="main-layout">
+  <div class="panel">
+
+    <div class="section-title">Banner Style</div>
+    <div class="form-group">
+      <select id="bannerMode" onchange="onBannerModeChange()">
+        <option value="pw" selected>PW Banner Style (Default)</option>
+        <option value="pdf">PDF Banner Style</option>
+        <option value="custom">Custom</option>
+      </select>
+    </div>
+    <div class="form-row" id="customDimensionRow" style="display:none;">
+      <div class="form-group">
+        <label>Custom Width</label>
+        <input type="number" id="customWidth" min="320" step="1" value="1312" oninput="onCustomDimensionChange()" />
+      </div>
+      <div class="form-group">
+        <label>Custom Height</label>
+        <input type="number" id="customHeight" min="320" step="1" value="656" oninput="onCustomDimensionChange()" />
+      </div>
+    </div>
+
+    <div class="section-title">PW Banner Color Presets</div>
+    <div class="template-grid" id="pwTemplateGrid"></div>
+
+    <div class="section-title">Batch Name</div>
+    <div class="form-group">
+      <input type="text" id="batchName" value="" placeholder="Enter batch name" oninput="render()" />
+    </div>
+    <div class="fc-sliders" id="textSliders">
+      <label>Horizontal <span id="tlbl-posX">50%</span></label>
+      <input type="range" min="0" max="100" step="1" value="50" id="textPosXSlider" oninput="onTextSlider('posX',this.value)" />
+      <label>Vertical <span id="tlbl-posY">25%</span></label>
+      <input type="range" min="0" max="80" step="1" value="25" id="textPosYSlider" oninput="onTextSlider('posY',this.value)" />
+      <label>Size <span id="tlbl-scale">100%</span></label>
+      <input type="range" min="30" max="200" step="1" value="100" id="textScaleSlider" oninput="onTextSlider('scale',this.value)" />
+    </div>
+
+    <div class="section-title">Overlays</div>
+    <div style="display:flex;gap:16px;margin-bottom:10px;">
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);">
+        <input type="checkbox" id="showBoxCheck" onchange="toggleOverlay('box',this.checked)" style="accent-color:var(--primary);" /> Info Box
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);">
+        <input type="checkbox" id="showTagCheck" onchange="toggleOverlay('tag',this.checked)" style="accent-color:var(--primary);" /> Tag
+      </label>
+    </div>
+    <div id="boxControls" style="display:none;margin-bottom:10px;padding:10px;background:var(--surface-2);border-radius:8px;border:1px solid var(--border);">
+      <div class="form-group" style="margin-bottom:8px;">
+        <label style="margin-bottom:4px;font-size:11px;color:var(--text-muted);">Box Text (auto-filled from features)</label>
+        <input type="text" id="boxTextInput" value="" oninput="render()" />
+      </div>
+      <button type="button" class="overlay-toggle" id="boxControlsToggle" onclick="toggleOverlayControls('box')">
+        <span>Show Position Controls</span>
+        <span class="arrow">&#9662;</span>
+      </button>
+      <div class="fc-sliders collapsed" id="boxSliderWrap">
+        <label>Horizontal <span id="boxLbl-posX">21%</span></label>
+        <input type="range" min="0" max="100" step="1" value="21" oninput="onBoxSlider('posX',this.value)" />
+        <label>Vertical <span id="boxLbl-posY">68%</span></label>
+        <input type="range" min="0" max="100" step="1" value="68" oninput="onBoxSlider('posY',this.value)" />
+        <label>Size <span id="boxLbl-scale">100%</span></label>
+        <input type="range" min="50" max="200" step="1" value="100" oninput="onBoxSlider('scale',this.value)" />
+      </div>
+    </div>
+    <div id="tagControls" style="display:none;margin-bottom:10px;padding:10px;background:var(--surface-2);border-radius:8px;border:1px solid var(--border);">
+      <div class="form-group" style="margin-bottom:8px;">
+        <label style="margin-bottom:4px;font-size:11px;color:var(--text-muted);">Tag Text (auto-filled from features)</label>
+        <input type="text" id="tagTextInput" value="" oninput="render()" />
+      </div>
+      <button type="button" class="overlay-toggle" id="tagControlsToggle" onclick="toggleOverlayControls('tag')">
+        <span>Show Size Control</span>
+        <span class="arrow">&#9662;</span>
+      </button>
+      <div class="fc-sliders collapsed" id="tagSliderWrap">
+        <label>Size <span id="tagLbl-scale">100%</span></label>
+        <input type="range" min="50" max="200" step="1" value="100" oninput="onTagSlider('scale',this.value)" />
+      </div>
+    </div>
+
+    <div class="section-title">Faculty Photos</div>
+    <div id="facultyList"></div>
+    <button class="btn-add-faculty" onclick="addFaculty()">+ Add Faculty Photo</button>
+    <input type="file" id="facultyFileInput" accept="image/*" style="display:none" />
+    <div class="drag-hint">Tip: Click and drag faculty photos or the batch name text directly on the canvas to reposition them.</div>
+
+    <div class="section-title" style="cursor:pointer;" onclick="toggleCustom()">
+      Custom Templates (Optional)
+      <span class="toggle-arrow collapsed" id="customArrow">&#9660;</span>
+    </div>
+    <div id="customSection" style="display:none;">
+      <div class="template-grid" id="customTemplateGrid"></div>
+
+      <div class="section-title">Batch Info</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Batch Year</label>
+          <input type="text" id="batchYear" value="2027" oninput="render()" />
+        </div>
+        <div class="form-group">
+          <label>Class</label>
+          <select id="batchClass" onchange="render()">
+            <option>Class 11th</option><option>Class 12th</option><option selected>Class 11th & 12th</option><option>Dropper</option><option>Class 9th</option><option>Class 10th</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Exam / Target</label>
+          <select id="examTarget" onchange="render()"><option selected>NEET</option><option>JEE</option><option>CUET</option><option>Boards</option><option>Foundation</option><option>Olympiad</option><option>GATE</option><option>UPSC</option></select>
+        </div>
+        <div class="form-group">
+          <label>Stream / Subject</label>
+          <select id="stream" onchange="render()"><option selected>Science</option><option>Commerce</option><option>Arts / Humanities</option><option>Mathematics</option><option>Physics</option><option>Chemistry</option><option>Biology</option><option>General</option></select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Tagline</label>
+        <input type="text" id="tagline" value="Your Complete NEET Preparation" oninput="render()" />
+      </div>
+      <div class="form-group">
+        <label>Language</label>
+        <select id="language" onchange="render()"><option selected>English Medium</option><option>Hindi Medium</option><option>Hinglish</option></select>
+      </div>
+
+      <div class="section-title">Features</div>
+      <div class="add-feature-row">
+        <input type="text" id="featureInput" placeholder="Type a feature..." onkeydown="if(event.key==='Enter'){addFeature()}" />
+        <button onclick="addFeature()">+ Add</button>
+      </div>
+      <div class="feature-tags" id="featureTags"></div>
+
+      <div class="section-title">Pricing</div>
+      <div class="form-row">
+        <div class="form-group"><label>Original Price</label><input type="text" id="originalPrice" value="12999" oninput="render()" /></div>
+        <div class="form-group"><label>Discounted Price</label><input type="text" id="discountPrice" value="5999" oninput="render()" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Badge Text</label><input type="text" id="badgeText" value="BEST SELLER" oninput="render()" /></div>
+        <div class="form-group"><label>Validity</label><input type="text" id="validity" value="1 Year Access" oninput="render()" /></div>
+      </div>
+
+      <div class="section-title">Teachers</div>
+      <div class="form-group">
+        <label>Teacher Names (comma separated)</label>
+        <input type="text" id="teachers" value="Alakh Pandey, Sachin Sir, Prashant Sir" oninput="render()" />
+      </div>
+
+      <div class="section-title">Design</div>
+      <div class="color-row">
+        <div class="form-group"><label>Primary</label><input type="color" id="colorPrimary" value="#7c3aed" oninput="render()" /></div>
+        <div class="form-group"><label>Secondary</label><input type="color" id="colorSecondary" value="#ec4899" oninput="render()" /></div>
+        <div class="form-group"><label>Accent</label><input type="color" id="colorAccent" value="#f59e0b" oninput="render()" /></div>
+      </div>
+      <div class="form-group">
+        <label>Logo / Brand Text</label>
+        <input type="text" id="logoText" value="PW" oninput="render()" />
+      </div>
+    </div>
+
+    <div style="margin-top:20px;">
+      <button class="btn btn-primary" onclick="render()">Refresh Preview</button>
+      <button class="btn btn-download" id="downloadBtn" onclick="downloadBanner()">Download PNG (1312 x 656)</button>
+    </div>
+  </div>
+
+  <div class="preview-area">
+    <div class="canvas-wrap">
+      <canvas id="bannerCanvas" width="1312" height="656"></canvas>
+    </div>
+    <div class="size-label" id="sizeLabel">1312 x 656 px &middot; 2:1 aspect ratio</div>
+  </div>
+</div>
+
+<!-- CROP MODAL -->
+<div class="crop-overlay" id="cropOverlay">
+  <div class="crop-header">Drag to select crop area</div>
+  <div class="crop-container" id="cropContainer">
+    <img id="cropImage" />
+    <canvas id="cropCanvas"></canvas>
+  </div>
+  <div class="crop-preview-wrap">
+    <span style="color:var(--text-muted);font-size:12px;">Preview:</span>
+    <div class="crop-preview-box"><img id="cropPreview" /></div>
+  </div>
+  <div class="crop-buttons">
+    <button class="crop-btn-reset" onclick="resetCrop()">Reset</button>
+    <button class="crop-btn-cancel" onclick="closeCrop()">Cancel</button>
+    <button class="crop-btn-apply" onclick="applyCrop()">Apply Crop</button>
+  </div>
+</div>
+
+<!-- ERASE MODAL -->
+<div class="erase-overlay" id="eraseOverlay">
+  <div class="erase-header">Manual Eraser &mdash; paint to erase background</div>
+  <div class="erase-controls">
+    <label>Brush Size: <span id="eraseBrushLbl">30</span>px</label>
+    <input type="range" min="4" max="120" value="30" id="eraseBrushSlider" oninput="document.getElementById('eraseBrushLbl').textContent=this.value" />
+    <label style="margin-left:8px;">Opacity: <span id="eraseOpacityLbl">100</span>%</label>
+    <input type="range" min="10" max="100" value="100" id="eraseOpacitySlider" oninput="document.getElementById('eraseOpacityLbl').textContent=this.value" />
+  </div>
+  <div class="erase-canvas-wrap" id="eraseCanvasWrap">
+    <canvas id="eraseCanvas"></canvas>
+  </div>
+  <div class="erase-buttons">
+    <button class="erase-btn-reset" onclick="resetErase()">Reset</button>
+    <button class="erase-btn-undo" onclick="undoErase()">&#8630; Undo</button>
+    <button class="erase-btn-cancel" onclick="closeErase()">Cancel</button>
+    <button class="erase-btn-apply" onclick="applyErase()">Apply</button>
+  </div>
+</div>
+
+<script>
+// ===== CONSTANTS =====
+let W = 1312, H = 656;
+const BANNER_DIMENSIONS = {
+  pw: { width: 1312, height: 656 },
+  pdf: { width: 506, height: 662 },
+};
+
+// ===== PW TEMPLATE PRESETS =====
+const TAG_STYLE = {
+  fill: '#3a3a39',
+  text: '#ffffff',
+  stroke: '#ffffff',
+};
+
+const pwPresets = [
+  { id:'pw_1', name:'Golden', bgTop:'#fde397', bgBot:'#fde397', text:'#8b6914', boxFill:'#cc7a00', boxText:'#ffffff', circleColor:'rgba(255,255,255,0.18)' },
+  { id:'pw_2', name:'Rose', bgTop:'#ffddda', bgBot:'#ffddda', text:'#be185d', boxFill:'#fd7d7f', boxText:'#ffffff', circleColor:'rgba(255,255,255,0.14)' },
+  { id:'pw_3', name:'Lavender', bgTop:'#e6e6fa', bgBot:'#e6e6fa', text:'#4b0082', boxFill:'#8b5a9f', boxText:'#ffffff', circleColor:'rgba(255,255,255,0.14)' },
+  { id:'pw_4', name:'Mint', bgTop:'#c7ffe7', bgBot:'#c7ffe7', text:'#006400', boxFill:'#2ecc71', boxText:'#ffffff', circleColor:'rgba(255,255,255,0.16)' },
+  { id:'pw_5', name:'Aqua', bgTop:'#e0ffff', bgBot:'#e0ffff', text:'#008b8b', boxFill:'#20b2aa', boxText:'#ffffff', circleColor:'rgba(255,255,255,0.16)' },
+  { id:'pw_6', name:'Lilac', bgTop:'#f8e0ff', bgBot:'#f8e0ff', text:'#6b46c1', boxFill:'#9966cc', boxText:'#ffffff', circleColor:'rgba(255,255,255,0.16)' },
+  { id:'pw_7', name:'Maroon', bgTop:'#721d08', bgBot:'#721d08', text:'#ffffff', boxFill:'#4a1008', boxText:'#ffffff', circleColor:'rgba(255,255,255,0.16)' },
+  { id:'pw_8', name:'Amber', bgTop:'#ffb347', bgBot:'#ffb347', text:'#340a00', boxFill:'#cc8800', boxText:'#ffffff', circleColor:'rgba(255,255,255,0.14)' },
+  { id:'pw_9', name:'Sky', bgTop:'#c7efff', bgBot:'#c7efff', text:'#1e3a8a', boxFill:'#3498db', boxText:'#ffffff', circleColor:'rgba(255,255,255,0.16)' },
+];
+
+// ===== CUSTOM TEMPLATE PRESETS =====
+const customTemplates = [
+  { id:'gradient_burst', name:'Gradient Burst', colors:['#7c3aed','#ec4899'] },
+  { id:'modern_split',   name:'Modern Split',   colors:['#1e40af','#06b6d4'] },
+  { id:'neon_dark',      name:'Neon Dark',      colors:['#111827','#8b5cf6'] },
+  { id:'wave_flow',      name:'Wave Flow',      colors:['#059669','#34d399'] },
+  { id:'royal_gold',     name:'Royal Gold',     colors:['#1a1a2e','#f59e0b'] },
+  { id:'sunset_blaze',   name:'Sunset Blaze',   colors:['#dc2626','#f97316'] },
+  { id:'ocean_deep',     name:'Ocean Deep',     colors:['#0f172a','#0ea5e9'] },
+  { id:'clean_minimal',  name:'Clean Minimal',  colors:['#ffffff','#6366f1'] },
+];
+
+// ===== STATE =====
+let features = ['Live Classes', 'DPPs & Notes', 'Test Series', 'Doubt Sessions'];
+let currentTemplate = 'pw_1'; // default to PW template
+let bannerMode = 'pw';
+let facultyPhotos = [];
+let _facId = 0;
+let _pendingFacultyId = null;
+
+// Crop state
+let cropFacultyId = null;
+let cropStartX = 0, cropStartY = 0, cropEndX = 0, cropEndY = 0;
+let isCropping = false;
+let draggedFacultyId = null;
+
+// Drag state for canvas
+let dragFacultyId = null;
+let dragOffsetX = 0, dragOffsetY = 0;
+let draggingText = false;
+let draggingBox = false;
+let titleAutoCentered = true;
+
+// Batch name text position (% of canvas) and scale (% of auto-size). null = auto.
+let textPosXPct = 50;  // horizontal %
+let textPosYPct = 25;  // vertical %
+let textScalePct = 100; // size %
+
+// Overlay state
+let showInfoBox = false;
+let showInfoTag = false;
+let boxPosXPct = 21, boxPosYPct = 68, boxScalePct = 100;
+let tagPosXPct = 50, tagPosYPct = 89, tagScalePct = 100;
+let boxControlsOpen = false;
+let tagControlsOpen = false;
+const TAG_LOCKED_POS_X = 50;
+const TAG_LOCKED_POS_Y = 100;
+
+const FACULTY_LAYOUTS = {
+  1: { stripWidth: 320, leftMargin: 496, rightMargin: 496, gap: 0, itemWidth: 320 },
+  2: { stripWidth: 560, leftMargin: 376, rightMargin: 376, gap: 0, itemWidth: 280 },
+  3: { stripWidth: 780, leftMargin: 266, rightMargin: 266, gap: 0, itemWidth: 260 },
+  4: { stripWidth: 1000, leftMargin: 156, rightMargin: 156, gap: 0, itemWidth: 250 },
+  5: { stripWidth: 1180, leftMargin: 66, rightMargin: 66, gap: 0, itemWidth: 236 },
+  6: { stripWidth: 1260, leftMargin: 26, rightMargin: 26, gap: 0, itemWidth: 210 },
+  7: { stripWidth: 1280, leftMargin: 16, rightMargin: 16, gap: 0, itemWidth: 182.8571428571 },
+  8: { stripWidth: 1288, leftMargin: 12, rightMargin: 12, gap: 0, itemWidth: 161 },
+};
+
+const FACULTY_VISUAL_OVERLAP = 88;
+
+// Bounding box of the last rendered batch name text (for hit detection)
+let _lastTextBBox = null; // { x, y, w, h }
+let _lastBoxBBox = null; // { x, y, w, h }
+
+// ===== INIT =====
+window.addEventListener('DOMContentLoaded', () => {
+  buildPWTemplateGrid();
+  buildCustomTemplateGrid();
+  renderFeatureTags();
+  renderFacultyList();
+  tagPosXPct = TAG_LOCKED_POS_X;
+  tagPosYPct = TAG_LOCKED_POS_Y;
+  const tagLblX = document.getElementById('tagLbl-posX');
+  const tagLblY = document.getElementById('tagLbl-posY');
+  if (tagLblX) tagLblX.textContent = 'Center';
+  if (tagLblY) tagLblY.textContent = 'Bottom';
+  syncOverlayControlStates();
+  applyBannerDimensions();
+  document.getElementById('facultyFileInput').addEventListener('change', onFacultyFileSelected);
+  initCropEvents();
+  initEraseEvents();
+  initCanvasDrag();
+  document.fonts.ready.then(() => render());
+});
+
+function getCurrentBannerDimensions() {
+  if (bannerMode === 'custom') {
+    const parsedWidth = parseInt(document.getElementById('customWidth').value || '1312', 10);
+    const parsedHeight = parseInt(document.getElementById('customHeight').value || '656', 10);
+    const width = Math.max(320, Number.isFinite(parsedWidth) ? parsedWidth : 1312);
+    const height = Math.max(320, Number.isFinite(parsedHeight) ? parsedHeight : 656);
+    return { width, height };
+  }
+  return BANNER_DIMENSIONS[bannerMode] || BANNER_DIMENSIONS.pw;
+}
+
+function updateBannerDimensionUI() {
+  const label = document.getElementById('sizeLabel');
+  const button = document.getElementById('downloadBtn');
+  const ratio = (W / H).toFixed(2).replace(/\.00$/, '');
+  if (label) label.innerHTML = `${W} x ${H} px &middot; ${ratio}:1 aspect ratio`;
+  if (button) button.textContent = `Download PNG (${W} x ${H})`;
+}
+
+function applyBannerDimensions() {
+  const dims = getCurrentBannerDimensions();
+  W = dims.width;
+  H = dims.height;
+  const canvas = document.getElementById('bannerCanvas');
+  canvas.width = W;
+  canvas.height = H;
+  updateBannerDimensionUI();
+}
+
+function onBannerModeChange() {
+  bannerMode = document.getElementById('bannerMode').value;
+  document.getElementById('customDimensionRow').style.display = bannerMode === 'custom' ? 'grid' : 'none';
+  applyBannerDimensions();
+  autoArrangeFaculty(true);
+  render();
+}
+
+function onCustomDimensionChange() {
+  if (bannerMode !== 'custom') return;
+  applyBannerDimensions();
+  autoArrangeFaculty(true);
+  render();
+}
+
+function isPWTemplate() {
+  return currentTemplate.startsWith('pw_');
+}
+
+function onTextSlider(field, value) {
+  const v = parseFloat(value);
+  titleAutoCentered = false;
+  if (field === 'posX') { textPosXPct = v; document.getElementById('tlbl-posX').textContent = Math.round(v) + '%'; }
+  if (field === 'posY') { textPosYPct = v; document.getElementById('tlbl-posY').textContent = Math.round(v) + '%'; }
+  if (field === 'scale') { textScalePct = v; document.getElementById('tlbl-scale').textContent = Math.round(v) + '%'; }
+  render();
+}
+
+function syncTextSliders() {
+  document.getElementById('textPosXSlider').value = textPosXPct;
+  document.getElementById('textPosYSlider').value = textPosYPct;
+  document.getElementById('textScaleSlider').value = textScalePct;
+  document.getElementById('tlbl-posX').textContent = Math.round(textPosXPct) + '%';
+  document.getElementById('tlbl-posY').textContent = Math.round(textPosYPct) + '%';
+  document.getElementById('tlbl-scale').textContent = Math.round(textScalePct) + '%';
+}
+
+function syncBoxSliders() {
+  const sliders = document.querySelectorAll('#boxControls input[type="range"]');
+  if (sliders[0]) sliders[0].value = boxPosXPct;
+  if (sliders[1]) sliders[1].value = boxPosYPct;
+  if (sliders[2]) sliders[2].value = boxScalePct;
+  const lblX = document.getElementById('boxLbl-posX');
+  const lblY = document.getElementById('boxLbl-posY');
+  const lblScale = document.getElementById('boxLbl-scale');
+  if (lblX) lblX.textContent = Math.round(boxPosXPct) + '%';
+  if (lblY) lblY.textContent = Math.round(boxPosYPct) + '%';
+  if (lblScale) lblScale.textContent = Math.round(boxScalePct) + '%';
+}
+
+function syncOverlayControlStates() {
+  const boxWrap = document.getElementById('boxSliderWrap');
+  const tagWrap = document.getElementById('tagSliderWrap');
+  const boxToggle = document.getElementById('boxControlsToggle');
+  const tagToggle = document.getElementById('tagControlsToggle');
+
+  if (boxWrap) boxWrap.classList.toggle('collapsed', !boxControlsOpen);
+  if (tagWrap) tagWrap.classList.toggle('collapsed', !tagControlsOpen);
+  if (boxToggle) boxToggle.classList.toggle('open', boxControlsOpen);
+  if (tagToggle) tagToggle.classList.toggle('open', tagControlsOpen);
+}
+
+function toggleOverlayControls(type) {
+  if (type === 'box') {
+    boxControlsOpen = !boxControlsOpen;
+  } else {
+    tagControlsOpen = !tagControlsOpen;
+  }
+  syncOverlayControlStates();
+}
+
+function toggleCustom() {
+  const sec = document.getElementById('customSection');
+  const arrow = document.getElementById('customArrow');
+  if (sec.style.display === 'none') {
+    sec.style.display = 'block';
+    arrow.classList.remove('collapsed');
+  } else {
+    sec.style.display = 'none';
+    arrow.classList.add('collapsed');
+  }
+}
+
+function getState() {
+  return {
+    batchName: document.getElementById('batchName').value,
+    batchYear: document.getElementById('batchYear').value,
+    batchClass: document.getElementById('batchClass').value,
+    examTarget: document.getElementById('examTarget').value,
+    stream: document.getElementById('stream').value,
+    tagline: document.getElementById('tagline').value,
+    language: document.getElementById('language').value,
+    features,
+    originalPrice: document.getElementById('originalPrice').value,
+    discountPrice: document.getElementById('discountPrice').value,
+    badgeText: document.getElementById('badgeText').value,
+    validity: document.getElementById('validity').value,
+    teachers: document.getElementById('teachers').value.split(',').map(s=>s.trim()).filter(Boolean),
+    colorPrimary: document.getElementById('colorPrimary').value,
+    colorSecondary: document.getElementById('colorSecondary').value,
+    colorAccent: document.getElementById('colorAccent').value,
+    logoText: document.getElementById('logoText').value,
+    template: currentTemplate,
+    faculty: facultyPhotos,
+  };
+}
+
+// ===== FEATURES =====
+function addFeature() { const i=document.getElementById('featureInput'); const v=i.value.trim(); if(!v)return; features.push(v); i.value=''; renderFeatureTags(); render(); }
+function removeFeature(i) { features.splice(i,1); renderFeatureTags(); render(); }
+function renderFeatureTags() { document.getElementById('featureTags').innerHTML=features.map((f,i)=>`<div class="feature-tag">${f} <span class="remove" onclick="removeFeature(${i})">&times;</span></div>`).join(''); }
+
+// ===== PW TEMPLATE GRID =====
+function buildPWTemplateGrid() {
+  document.getElementById('pwTemplateGrid').innerHTML = pwPresets.map(t => `
+    <button class="template-btn ${t.id===currentTemplate?'active':''}" onclick="selectPWTemplate('${t.id}')">
+      <div class="preview-bar" style="background:linear-gradient(135deg,${t.bgTop},${t.bgBot})"></div>${t.name}
+    </button>`).join('');
+}
+
+function selectPWTemplate(id) {
+  currentTemplate = id;
+  buildPWTemplateGrid();
+  buildCustomTemplateGrid();
+  render();
+}
+
+// ===== CUSTOM TEMPLATE GRID =====
+function buildCustomTemplateGrid() {
+  document.getElementById('customTemplateGrid').innerHTML = customTemplates.map(t => `
+    <button class="template-btn ${t.id===currentTemplate?'active':''}" onclick="selectCustomTemplate('${t.id}')">
+      <div class="preview-bar" style="background:linear-gradient(135deg,${t.colors[0]},${t.colors[1]})"></div>${t.name}
+    </button>`).join('');
+}
+
+function selectCustomTemplate(id) {
+  currentTemplate = id;
+  const t = customTemplates.find(x => x.id === id);
+  if (t) {
+    document.getElementById('colorPrimary').value = t.colors[0];
+    document.getElementById('colorSecondary').value = t.colors[1];
+  }
+  buildPWTemplateGrid();
+  buildCustomTemplateGrid();
+  render();
+}
+
+// ===== FACULTY PHOTO MANAGEMENT =====
+function addFaculty() {
+  _pendingFacultyId = null;
+  document.getElementById('facultyFileInput').click();
+}
+
+function onFacultyFileSelected(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  e.target.value = '';
+
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const dataUrl = ev.target.result;
+    if (_pendingFacultyId !== null) {
+      const f = facultyPhotos.find(x => x.id === _pendingFacultyId);
+      if (f) {
+        f.originalDataUrl = dataUrl;
+        f.displayDataUrl = dataUrl;
+        f.cropX = 0; f.cropY = 0; f.cropW = 1; f.cropH = 1;
+        f.bgRemoved = false;
+        loadFacultyImage(f);
+      }
+      _pendingFacultyId = null;
+    } else {
+      // Position new faculty: spread evenly across bottom
+      const count = facultyPhotos.length;
+      const fac = {
+        id: ++_facId,
+        name: 'Faculty ' + _facId,
+        originalDataUrl: dataUrl,
+        displayDataUrl: dataUrl,
+        imageObj: null,
+        posX: 50,
+        posY: 0,
+        scale: 100,
+        cropX: 0, cropY: 0, cropW: 1, cropH: 1,
+        bgRemoved: false,
+        bgRemoving: false,
+        brightness: 100,
+        baseWidth: 235,
+        controlsOpen: false,
+      };
+      facultyPhotos.push(fac);
+      autoArrangeFaculty();
+      loadFacultyImage(fac);
+    }
+    renderFacultyList();
+  };
+  reader.readAsDataURL(file);
+}
+
+function autoArrangeFaculty(preserveAdjustments = false) {
+  const n = facultyPhotos.length;
+  if (n === 0) return;
+  const layout = getFacultyStripLayout(n);
+  const step = n === 1 ? layout.itemWidth : (layout.stripWidth - layout.itemWidth) / (n - 1);
+  for (let i = 0; i < n; i++) {
+    const centerX = layout.leftMargin + (layout.itemWidth / 2) + i * step;
+    facultyPhotos[i].posX = (centerX / W) * 100;
+    if (!preserveAdjustments) {
+      facultyPhotos[i].posY = 0;
+      facultyPhotos[i].scale = 100;
+    }
+    facultyPhotos[i].baseWidth = layout.itemWidth;
+  }
+}
+
+function loadFacultyImage(fac) {
+  const img = new Image();
+  img.onload = () => { fac.imageObj = img; render(); };
+  img.src = fac.displayDataUrl;
+}
+
+function removeFaculty(id) {
+  facultyPhotos = facultyPhotos.filter(f => f.id !== id);
+  autoArrangeFaculty();
+  renderFacultyList();
+  render();
+}
+
+function replaceFacultyPhoto(id) {
+  _pendingFacultyId = id;
+  document.getElementById('facultyFileInput').click();
+}
+
+async function removeFacultyBg(id) {
+  const fac = facultyPhotos.find(f => f.id === id);
+  if (!fac || fac.bgRemoving) return;
+  fac.bgRemoving = true;
+  renderFacultyList();
+  try {
+    // Send original full-resolution image to preserve quality
+    const resp = await fetch('/api/remove-bg', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: fac.originalDataUrl }),
+    });
+    if (!resp.ok) {
+      let errMsg = `Server error ${resp.status}`;
+      try { const d = await resp.json(); errMsg = d.error || errMsg; } catch(_) {}
+      throw new Error(errMsg);
+    }
+    const data = await resp.json();
+    if (data.image) {
+      fac.displayDataUrl = data.image;
+      fac.bgRemoved = true;
+      loadFacultyImage(fac);
+    } else {
+      throw new Error(data.error || 'Unknown error');
+    }
+  } catch (e) {
+    alert('Background removal failed: ' + e.message);
+  }
+  fac.bgRemoving = false;
+  renderFacultyList();
+}
+
+function updateFacultySlider(id, field, value) {
+  const fac = facultyPhotos.find(f => f.id === id);
+  if (!fac) return;
+  fac[field] = parseFloat(value);
+  const lbl = document.getElementById('flbl-' + field + '-' + id);
+  if (lbl) lbl.textContent = Math.round(value) + '%';
+  render();
+}
+
+function updateFacultyName(id, value) {
+  const fac = facultyPhotos.find(f => f.id === id);
+  if (fac) fac.name = value;
+}
+
+function toggleFacultyControls(id) {
+  const fac = facultyPhotos.find(f => f.id === id);
+  if (!fac) return;
+  fac.controlsOpen = !fac.controlsOpen;
+  renderFacultyList();
+}
+
+function onFacultyCardDragStart(id, event) {
+  draggedFacultyId = id;
+  event.dataTransfer.effectAllowed = 'move';
+  event.dataTransfer.setData('text/plain', String(id));
+  event.currentTarget.classList.add('dragging');
+}
+
+function onFacultyCardDragEnd(event) {
+  draggedFacultyId = null;
+  document.querySelectorAll('.faculty-card').forEach(card => {
+    card.classList.remove('dragging');
+    card.classList.remove('drag-target');
+  });
+}
+
+function onFacultyCardDragOver(id, event) {
+  event.preventDefault();
+  if (draggedFacultyId === null || draggedFacultyId === id) return;
+  event.dataTransfer.dropEffect = 'move';
+  event.currentTarget.classList.add('drag-target');
+}
+
+function onFacultyCardDragLeave(event) {
+  event.currentTarget.classList.remove('drag-target');
+}
+
+function onFacultyCardDrop(targetId, event) {
+  event.preventDefault();
+  event.currentTarget.classList.remove('drag-target');
+  const sourceId = draggedFacultyId ?? parseInt(event.dataTransfer.getData('text/plain'), 10);
+  if (!sourceId || sourceId === targetId) return;
+  const sourceIndex = facultyPhotos.findIndex(f => f.id === sourceId);
+  const targetIndex = facultyPhotos.findIndex(f => f.id === targetId);
+  if (sourceIndex === -1 || targetIndex === -1) return;
+  const [item] = facultyPhotos.splice(sourceIndex, 1);
+  facultyPhotos.splice(targetIndex, 0, item);
+  autoArrangeFaculty(true);
+  renderFacultyList();
+  render();
+}
+
+function renderFacultyList() {
+  const container = document.getElementById('facultyList');
+  container.innerHTML = facultyPhotos.map((f, index) => `
+    <div
+      class="faculty-card"
+      draggable="true"
+      ondragstart="onFacultyCardDragStart(${f.id}, event)"
+      ondragend="onFacultyCardDragEnd(event)"
+      ondragover="onFacultyCardDragOver(${f.id}, event)"
+      ondragleave="onFacultyCardDragLeave(event)"
+      ondrop="onFacultyCardDrop(${f.id}, event)"
+    >
+      <button class="fc-remove" onclick="removeFaculty(${f.id})" title="Remove">&times;</button>
+      <div class="fc-header">
+        <div class="fc-thumb">
+          ${f.displayDataUrl ? `<img src="${f.displayDataUrl}" />` : '<span style="color:var(--text-muted);font-size:20px;">+</span>'}
+        </div>
+        <div class="fc-info">
+          <input type="text" value="${f.name}" onchange="updateFacultyName(${f.id},this.value)" style="padding:4px 6px;font-size:12px;font-weight:600;" />
+          <div class="fc-status">${f.bgRemoved ? '<span style="color:var(--success);">BG Removed</span>' : 'Original'}</div>
+        </div>
+      </div>
+      <div class="fc-order">
+        <span class="fc-position">Position ${index + 1}</span>
+        <span class="fc-drag-handle">Drag To Reorder</span>
+      </div>
+      <div class="fc-actions">
+        <button class="fc-btn ${f.bgRemoving ? 'loading' : ''} ${f.bgRemoved ? 'done' : ''}" onclick="removeFacultyBg(${f.id})">
+          ${f.bgRemoving ? 'Removing...' : f.bgRemoved ? '\u2713 BG Removed' : 'Remove BG'}
+        </button>
+        <button class="fc-btn" onclick="openCrop(${f.id})">Crop</button>
+        <button class="fc-btn" onclick="openErase(${f.id})">Erase</button>
+        <button class="fc-btn" onclick="replaceFacultyPhoto(${f.id})">Replace</button>
+      </div>
+      <button class="fc-advanced-toggle ${f.controlsOpen ? 'open' : ''}" onclick="toggleFacultyControls(${f.id})">
+        <span>Adjust Position & Light</span>
+        <span class="arrow">&#9662;</span>
+      </button>
+      <div class="fc-sliders ${f.controlsOpen ? '' : 'collapsed'}">
+        <label>Horizontal <span id="flbl-posX-${f.id}">${Math.round(f.posX)}%</span></label>
+        <input type="range" min="0" max="100" step="1" value="${f.posX}" oninput="updateFacultySlider(${f.id},'posX',this.value)" />
+        <label>Vertical <span id="flbl-posY-${f.id}">${Math.round(f.posY)}%</span></label>
+        <input type="range" min="-25" max="25" step="1" value="${f.posY}" oninput="updateFacultySlider(${f.id},'posY',this.value)" />
+        <label>Size <span id="flbl-scale-${f.id}">${Math.round(f.scale)}%</span></label>
+        <input type="range" min="60" max="400" step="1" value="${f.scale}" oninput="updateFacultySlider(${f.id},'scale',this.value)" />
+        <label>Brightness <span id="flbl-brightness-${f.id}">${Math.round(f.brightness || 100)}%</span></label>
+        <input type="range" min="20" max="200" step="1" value="${f.brightness || 100}" oninput="updateFacultySlider(${f.id},'brightness',this.value)" />
+      </div>
+    </div>
+  `).join('');
+}
+
+// ===== CROP TOOL =====
+function initCropEvents() {
+  const canvas = document.getElementById('cropCanvas');
+  canvas.addEventListener('mousedown', e => { isCropping = true; const r = canvas.getBoundingClientRect(); cropStartX = (e.clientX - r.left) / r.width; cropStartY = (e.clientY - r.top) / r.height; cropEndX = cropStartX; cropEndY = cropStartY; });
+  canvas.addEventListener('mousemove', e => { if (!isCropping) return; const r = canvas.getBoundingClientRect(); cropEndX = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); cropEndY = Math.max(0, Math.min(1, (e.clientY - r.top) / r.height)); drawCropOverlay(); updateCropPreview(); });
+  canvas.addEventListener('mouseup', () => { isCropping = false; });
+  canvas.addEventListener('mouseleave', () => { isCropping = false; });
+}
+
+function openCrop(facId) {
+  const fac = facultyPhotos.find(f => f.id === facId);
+  if (!fac) return;
+  cropFacultyId = facId;
+  const img = document.getElementById('cropImage');
+  img.src = fac.displayDataUrl;
+  img.onload = () => {
+    const c = document.getElementById('cropCanvas');
+    c.width = img.naturalWidth;
+    c.height = img.naturalHeight;
+    cropStartX = fac.cropX;
+    cropStartY = fac.cropY;
+    cropEndX = fac.cropX + fac.cropW;
+    cropEndY = fac.cropY + fac.cropH;
+    drawCropOverlay();
+    updateCropPreview();
+  };
+  document.getElementById('cropOverlay').classList.add('show');
+}
+
+function drawCropOverlay() {
+  const c = document.getElementById('cropCanvas');
+  const ctx = c.getContext('2d');
+  const w = c.width, h = c.height;
+  ctx.clearRect(0, 0, w, h);
+  const x1 = Math.min(cropStartX, cropEndX) * w;
+  const y1 = Math.min(cropStartY, cropEndY) * h;
+  const x2 = Math.max(cropStartX, cropEndX) * w;
+  const y2 = Math.max(cropStartY, cropEndY) * h;
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.fillRect(0, 0, w, y1);
+  ctx.fillRect(0, y1, x1, y2 - y1);
+  ctx.fillRect(x2, y1, w - x2, y2 - y1);
+  ctx.fillRect(0, y2, w, h - y2);
+  ctx.strokeStyle = '#7c5cfc';
+  ctx.lineWidth = Math.max(2, w * 0.003);
+  ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+  const hs = Math.max(6, w * 0.008);
+  ctx.fillStyle = '#ffffff';
+  [[x1,y1],[x2,y1],[x1,y2],[x2,y2]].forEach(([cx,cy]) => {
+    ctx.fillRect(cx - hs/2, cy - hs/2, hs, hs);
+  });
+}
+
+function updateCropPreview() {
+  const fac = facultyPhotos.find(f => f.id === cropFacultyId);
+  if (!fac || !fac.imageObj) return;
+  const sx = Math.min(cropStartX, cropEndX);
+  const sy = Math.min(cropStartY, cropEndY);
+  const sw = Math.abs(cropEndX - cropStartX);
+  const sh = Math.abs(cropEndY - cropStartY);
+  if (sw < 0.01 || sh < 0.01) return;
+  const img = fac.imageObj;
+  const tmpC = document.createElement('canvas');
+  tmpC.width = 240; tmpC.height = 120;
+  const ctx = tmpC.getContext('2d');
+  ctx.drawImage(img, sx * img.naturalWidth, sy * img.naturalHeight, sw * img.naturalWidth, sh * img.naturalHeight, 0, 0, 240, 120);
+  document.getElementById('cropPreview').src = tmpC.toDataURL();
+}
+
+function applyCrop() {
+  const fac = facultyPhotos.find(f => f.id === cropFacultyId);
+  if (!fac) { closeCrop(); return; }
+  fac.cropX = Math.min(cropStartX, cropEndX);
+  fac.cropY = Math.min(cropStartY, cropEndY);
+  fac.cropW = Math.abs(cropEndX - cropStartX);
+  fac.cropH = Math.abs(cropEndY - cropStartY);
+  if (fac.cropW < 0.01 || fac.cropH < 0.01) { fac.cropX=0; fac.cropY=0; fac.cropW=1; fac.cropH=1; }
+  closeCrop();
+  render();
+}
+
+function resetCrop() {
+  cropStartX = 0; cropStartY = 0; cropEndX = 1; cropEndY = 1;
+  drawCropOverlay();
+  updateCropPreview();
+}
+
+function closeCrop() {
+  document.getElementById('cropOverlay').classList.remove('show');
+  cropFacultyId = null;
+}
+
+// ===== MANUAL ERASER TOOL =====
+let eraseFacultyId = null;
+let _eraseUndoStack = []; // ImageData snapshots
+let _eraseOrigDataUrl = null; // original displayDataUrl before any erasing
+let _isErasing = false;
+let _eraseCursorCanvas = null; // for custom cursor
+
+function initEraseEvents() {
+  const canvas = document.getElementById('eraseCanvas');
+
+  canvas.addEventListener('mousedown', e => {
+    if (eraseFacultyId === null) return;
+    _isErasing = true;
+    // Save snapshot for undo before starting a new stroke
+    const ctx = canvas.getContext('2d');
+    _eraseUndoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+    eraseAt(e);
+  });
+
+  canvas.addEventListener('mousemove', e => {
+    drawEraseCursor(e);
+    if (!_isErasing) return;
+    eraseAt(e);
+  });
+
+  canvas.addEventListener('mouseup', () => { _isErasing = false; });
+  canvas.addEventListener('mouseleave', () => { _isErasing = false; });
+}
+
+function eraseAt(e) {
+  const canvas = document.getElementById('eraseCanvas');
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const my = (e.clientY - rect.top) * scaleY;
+  const brushSize = parseInt(document.getElementById('eraseBrushSlider').value) * scaleX;
+  const opacity = parseInt(document.getElementById('eraseOpacitySlider').value) / 100;
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.globalAlpha = opacity;
+  ctx.beginPath();
+  ctx.arc(mx, my, brushSize / 2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawEraseCursor(e) {
+  const wrap = document.getElementById('eraseCanvasWrap');
+  if (!_eraseCursorCanvas) {
+    _eraseCursorCanvas = document.createElement('canvas');
+    _eraseCursorCanvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;';
+    wrap.style.position = 'relative';
+    wrap.appendChild(_eraseCursorCanvas);
+  }
+  const mainCanvas = document.getElementById('eraseCanvas');
+  _eraseCursorCanvas.width = mainCanvas.width;
+  _eraseCursorCanvas.height = mainCanvas.height;
+
+  const rect = mainCanvas.getBoundingClientRect();
+  const scaleX = mainCanvas.width / rect.width;
+  const scaleY = mainCanvas.height / rect.height;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const my = (e.clientY - rect.top) * scaleY;
+  const brushSize = parseInt(document.getElementById('eraseBrushSlider').value) * scaleX;
+
+  const ctx = _eraseCursorCanvas.getContext('2d');
+  ctx.clearRect(0, 0, _eraseCursorCanvas.width, _eraseCursorCanvas.height);
+  ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(mx, my, brushSize / 2, 0, Math.PI * 2);
+  ctx.stroke();
+  // crosshair
+  const cs = 6;
+  ctx.beginPath();
+  ctx.moveTo(mx - cs, my); ctx.lineTo(mx + cs, my);
+  ctx.moveTo(mx, my - cs); ctx.lineTo(mx, my + cs);
+  ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+function openErase(facId) {
+  const fac = facultyPhotos.find(f => f.id === facId);
+  if (!fac || !fac.displayDataUrl) return;
+
+  eraseFacultyId = facId;
+  _eraseUndoStack = [];
+  _eraseOrigDataUrl = fac.displayDataUrl;
+
+  const canvas = document.getElementById('eraseCanvas');
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  img.onload = () => {
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0);
+    document.getElementById('eraseOverlay').classList.add('show');
+  };
+  img.src = fac.displayDataUrl;
+}
+
+function applyErase() {
+  const fac = facultyPhotos.find(f => f.id === eraseFacultyId);
+  if (!fac) { closeErase(); return; }
+
+  const canvas = document.getElementById('eraseCanvas');
+  fac.displayDataUrl = canvas.toDataURL('image/png');
+  loadFacultyImage(fac);
+  closeErase();
+  render();
+}
+
+function undoErase() {
+  if (_eraseUndoStack.length === 0) return;
+  const canvas = document.getElementById('eraseCanvas');
+  const ctx = canvas.getContext('2d');
+  const prev = _eraseUndoStack.pop();
+  ctx.putImageData(prev, 0, 0);
+}
+
+function resetErase() {
+  if (!_eraseOrigDataUrl) return;
+  _eraseUndoStack = [];
+  const canvas = document.getElementById('eraseCanvas');
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  img.onload = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0);
+  };
+  img.src = _eraseOrigDataUrl;
+}
+
+function closeErase() {
+  document.getElementById('eraseOverlay').classList.remove('show');
+  eraseFacultyId = null;
+  _eraseUndoStack = [];
+  _eraseOrigDataUrl = null;
+  if (_eraseCursorCanvas && _eraseCursorCanvas.parentNode) {
+    _eraseCursorCanvas.parentNode.removeChild(_eraseCursorCanvas);
+    _eraseCursorCanvas = null;
+  }
+}
+
+// ===== CANVAS CLICK-AND-DRAG FOR FACULTY =====
+function initCanvasDrag() {
+  const canvas = document.getElementById('bannerCanvas');
+
+  canvas.addEventListener('mousedown', e => {
+    if (isCropping) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = W / rect.width;
+    const scaleY = H / rect.height;
+    const mx = (e.clientX - rect.left) * scaleX;
+    const my = (e.clientY - rect.top) * scaleY;
+
+    // Check batch name text hit first
+    if (_lastTextBBox) {
+      const b = _lastTextBBox;
+      if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
+        draggingText = true;
+        titleAutoCentered = false;
+        dragOffsetX = mx - (textPosXPct / 100) * W;
+        dragOffsetY = my - (textPosYPct / 100) * H;
+        canvas.style.cursor = 'grabbing';
+        e.preventDefault();
+        return;
+      }
+    }
+
+    if (_lastBoxBBox && showInfoBox) {
+      const b = _lastBoxBBox;
+      if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
+        draggingBox = true;
+        dragOffsetX = mx - (boxPosXPct / 100) * W;
+        dragOffsetY = my - (boxPosYPct / 100) * H;
+        canvas.style.cursor = 'grabbing';
+        e.preventDefault();
+        return;
+      }
+    }
+
+    // Check faculty in display order: first faculty is on top, so check it first
+    for (let i = 0; i < facultyPhotos.length; i++) {
+      const fac = facultyPhotos[i];
+      const drawRect = getFacultyDrawRect(fac, i, facultyPhotos.length);
+      if (!drawRect) continue;
+
+      if (mx >= drawRect.destX && mx <= drawRect.destX + drawRect.destW && my >= drawRect.destY && my <= drawRect.destY + drawRect.destH) {
+        dragFacultyId = fac.id;
+        dragOffsetX = mx - drawRect.destX;
+        dragOffsetY = my - drawRect.destY;
+        canvas.style.cursor = 'grabbing';
+        e.preventDefault();
+        return;
+      }
+    }
+  });
+
+  canvas.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = W / rect.width;
+    const scaleY = H / rect.height;
+    const mx = (e.clientX - rect.left) * scaleX;
+    const my = (e.clientY - rect.top) * scaleY;
+
+    // Dragging batch name text
+    if (draggingText) {
+      textPosXPct = Math.max(0, Math.min(100, ((mx - dragOffsetX) / W) * 100));
+      textPosYPct = Math.max(0, Math.min(80, ((my - dragOffsetY) / H) * 100));
+      syncTextSliders();
+      render();
+      e.preventDefault();
+      return;
+    }
+
+    if (draggingBox) {
+      boxPosXPct = Math.max(0, Math.min(100, ((mx - dragOffsetX) / W) * 100));
+      boxPosYPct = Math.max(0, Math.min(100, ((my - dragOffsetY) / H) * 100));
+      syncBoxSliders();
+      render();
+      e.preventDefault();
+      return;
+    }
+
+    if (dragFacultyId !== null) {
+      const fac = facultyPhotos.find(f => f.id === dragFacultyId);
+      if (!fac) return;
+      const facIndex = facultyPhotos.findIndex(f => f.id === fac.id);
+      const drawRect = getFacultyDrawRect(fac, facIndex, facultyPhotos.length);
+      if (!drawRect) return;
+      const nextDestX = mx - dragOffsetX;
+      const nextDestY = my - dragOffsetY;
+      fac.posX = Math.max(0, Math.min(100, ((nextDestX + drawRect.destW / 2) / W) * 100));
+      fac.posY = Math.max(-25, Math.min(25, (((nextDestY + drawRect.destH) - H) / H) * 100));
+      // Update slider UI
+      const sliderX = document.querySelector(`input[oninput*="updateFacultySlider(${fac.id},'posX'"]`);
+      const sliderY = document.querySelector(`input[oninput*="updateFacultySlider(${fac.id},'posY'"]`);
+      if (sliderX) sliderX.value = fac.posX;
+      if (sliderY) sliderY.value = fac.posY;
+      const lblX = document.getElementById('flbl-posX-' + fac.id);
+      const lblY = document.getElementById('flbl-posY-' + fac.id);
+      if (lblX) lblX.textContent = Math.round(fac.posX) + '%';
+      if (lblY) lblY.textContent = Math.round(fac.posY) + '%';
+      render();
+      e.preventDefault();
+      return;
+    }
+
+    // Hover cursor hint
+    let overSomething = false;
+
+    // Check text hover
+    if (_lastTextBBox) {
+      const b = _lastTextBBox;
+      if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
+        overSomething = true;
+      }
+    }
+
+    if (!overSomething && _lastBoxBBox && showInfoBox) {
+      const b = _lastBoxBBox;
+      if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
+        overSomething = true;
+      }
+    }
+
+    if (!overSomething) {
+      for (let i = 0; i < facultyPhotos.length; i++) {
+        const fac = facultyPhotos[i];
+        const drawRect = getFacultyDrawRect(fac, i, facultyPhotos.length);
+        if (!drawRect) continue;
+        if (mx >= drawRect.destX && mx <= drawRect.destX + drawRect.destW && my >= drawRect.destY && my <= drawRect.destY + drawRect.destH) {
+          overSomething = true;
+          break;
+        }
+      }
+    }
+    canvas.style.cursor = overSomething ? 'grab' : 'default';
+  });
+
+  canvas.addEventListener('mouseup', () => {
+    if (draggingText) {
+      draggingText = false;
+      document.getElementById('bannerCanvas').style.cursor = 'default';
+    }
+    if (draggingBox) {
+      draggingBox = false;
+      document.getElementById('bannerCanvas').style.cursor = 'default';
+    }
+    if (dragFacultyId !== null) {
+      dragFacultyId = null;
+      document.getElementById('bannerCanvas').style.cursor = 'default';
+    }
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    if (draggingText) {
+      draggingText = false;
+      document.getElementById('bannerCanvas').style.cursor = 'default';
+    }
+    if (draggingBox) {
+      draggingBox = false;
+      document.getElementById('bannerCanvas').style.cursor = 'default';
+    }
+    if (dragFacultyId !== null) {
+      dragFacultyId = null;
+      document.getElementById('bannerCanvas').style.cursor = 'default';
+    }
+  });
+}
+
+// ===== CANVAS HELPERS =====
+function hexToRgb(hex){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return{r,g,b};}
+function rgba(hex,a){const c=hexToRgb(hex);return`rgba(${c.r},${c.g},${c.b},${a})`;}
+
+function drawRoundedRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();}
+function drawCircle(ctx,cx,cy,r){ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);}
+
+function measureText(ctx,text,maxW,font){ctx.font=font;const words=text.split(' ');const lines=[];let line='';for(const w of words){const t=line?line+' '+w:w;if(ctx.measureText(t).width>maxW&&line){lines.push(line);line=w;}else line=t;}if(line)lines.push(line);return lines;}
+
+function drawDecoCircles(ctx,s){drawCircle(ctx,W*0.85,H*0.15,180);ctx.fillStyle=rgba(s.colorSecondary,0.08);ctx.fill();drawCircle(ctx,W*0.1,H*0.9,120);ctx.fillStyle=rgba(s.colorPrimary,0.1);ctx.fill();drawCircle(ctx,W*0.7,H*0.8,90);ctx.fillStyle=rgba(s.colorSecondary,0.06);ctx.fill();}
+function drawDots(ctx,c,n){for(let i=0;i<n;i++){drawCircle(ctx,Math.random()*W,Math.random()*H,Math.random()*2.5+0.5);ctx.fillStyle=rgba(c,Math.random()*0.15+0.05);ctx.fill();}}
+function drawGrid(ctx,c){ctx.strokeStyle=rgba(c,0.04);ctx.lineWidth=1;for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}}
+function drawWaves(ctx,c,yB,amp,waves){ctx.beginPath();ctx.moveTo(0,H);ctx.lineTo(0,yB);for(let x=0;x<=W;x+=2)ctx.lineTo(x,yB+Math.sin((x/W)*Math.PI*waves)*amp);ctx.lineTo(W,H);ctx.closePath();ctx.fillStyle=c;ctx.fill();}
+function drawDiagonalStripes(ctx,c){ctx.save();ctx.strokeStyle=rgba(c,0.04);ctx.lineWidth=1;for(let i=-H;i<W+H;i+=30){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i+H,H);ctx.stroke();}ctx.restore();}
+
+function drawLogo(ctx,s,x,y,sz){
+  ctx.save();drawRoundedRect(ctx,x,y,sz,sz,sz*0.22);ctx.fillStyle=rgba('#ffffff',0.15);ctx.fill();ctx.strokeStyle=rgba('#ffffff',0.25);ctx.lineWidth=1.5;ctx.stroke();
+  ctx.font=`900 ${sz*0.45}px 'Poppins',sans-serif`;ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(s.logoText||'PW',x+sz/2,y+sz/2+1);ctx.restore();
+}
+
+function drawBadge(ctx,text,x,y,bg,fg){if(!text)return;ctx.font="bold 14px 'Inter',sans-serif";const tw=ctx.measureText(text).width;drawRoundedRect(ctx,x,y,tw+28,26,13);ctx.fillStyle=bg;ctx.fill();ctx.fillStyle=fg;ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(text,x+14,y+13);}
+
+function drawPriceBadge(ctx,s,x,y){
+  if(!s.discountPrice)return;
+  drawRoundedRect(ctx,x,y,200,70,12);ctx.fillStyle=rgba('#000',0.3);ctx.fill();
+  drawRoundedRect(ctx,x,y,200,70,12);ctx.strokeStyle=rgba('#fff',0.1);ctx.lineWidth=1;ctx.stroke();
+  ctx.font="900 32px 'Poppins',sans-serif";ctx.fillStyle='#fff';ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText('\u20B9'+s.discountPrice,x+14,y+8);
+  if(s.originalPrice&&s.originalPrice!==s.discountPrice){
+    ctx.font="500 15px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.5);const ox=x+14,oy=y+47;ctx.fillText('\u20B9'+s.originalPrice,ox,oy);
+    const ow=ctx.measureText('\u20B9'+s.originalPrice).width;ctx.strokeStyle=rgba('#fff',0.5);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(ox,oy+7);ctx.lineTo(ox+ow,oy+7);ctx.stroke();
+    if(parseInt(s.originalPrice)>0){const pct=Math.round((1-parseInt(s.discountPrice)/parseInt(s.originalPrice))*100);if(pct>0){ctx.font="bold 14px 'Inter',sans-serif";ctx.fillStyle='#4ade80';ctx.fillText(pct+'% OFF',x+110,oy);}}
+  }
+}
+
+function drawFeaturePills(ctx,s,x,y,maxW){
+  if(!s.features.length)return 0;ctx.font="600 13px 'Inter',sans-serif";let cx=x,cy=y;const pH=28,gap=8,padX=12;
+  for(const feat of s.features){const tw=ctx.measureText(feat).width;const pW=tw+padX*2+20;if(cx+pW>x+maxW&&cx>x){cx=x;cy+=pH+gap;}
+    drawRoundedRect(ctx,cx,cy,pW,pH,14);ctx.fillStyle=rgba('#fff',0.12);ctx.fill();ctx.strokeStyle=rgba('#fff',0.15);ctx.lineWidth=0.8;ctx.stroke();
+    ctx.font="bold 14px sans-serif";ctx.fillStyle=s.colorAccent;ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText('\u2713',cx+padX-2,cy+pH/2);
+    ctx.font="600 13px 'Inter',sans-serif";ctx.fillStyle='#fff';ctx.fillText(feat,cx+padX+16,cy+pH/2);cx+=pW+gap;}
+  return cy-y+pH;
+}
+
+function drawTeacherNames(ctx,s,x,y){if(!s.teachers.length)return;ctx.font="500 14px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.7);ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText('Faculty: '+s.teachers.join(' \u00b7 '),x,y);}
+
+// ===== DRAW FACULTY PHOTOS ON CANVAS =====
+function getFacultyStripLayout(count) {
+  if (FACULTY_LAYOUTS[count]) return FACULTY_LAYOUTS[count];
+  return FACULTY_LAYOUTS[Math.min(8, Math.max(1, count))];
+}
+
+function getFacultyDrawRect(fac, index, totalCount) {
+  if (!fac.imageObj || !fac.imageObj.complete) return null;
+  const img = fac.imageObj;
+  const sw = fac.cropW * img.naturalWidth;
+  const sh = fac.cropH * img.naturalHeight;
+  if (sw < 1 || sh < 1) return null;
+
+  const layout = getFacultyStripLayout(totalCount);
+  const baseWidth = fac.baseWidth || layout.itemWidth;
+  const centerX = (fac.posX / 100) * W;
+  const aspect = sw / sh;
+  const overlapBoost = totalCount > 1 ? FACULTY_VISUAL_OVERLAP : 0;
+  const destW = (baseWidth + overlapBoost) * ((fac.scale || 100) / 100);
+  const destH = destW / aspect;
+  const bottomShift = (fac.posY / 100) * H;
+  const destX = centerX - destW / 2;
+  const destY = H - destH + bottomShift;
+
+  return { sx: fac.cropX * img.naturalWidth, sy: fac.cropY * img.naturalHeight, sw, sh, destX, destY, destW, destH };
+}
+
+// First faculty is drawn ON TOP (in front), last is drawn behind
+function drawFacultyPhotos(ctx, s) {
+  // Draw in reverse order so faculty[0] is on top
+  for (let i = s.faculty.length - 1; i >= 0; i--) {
+    const fac = s.faculty[i];
+    const rect = getFacultyDrawRect(fac, i, s.faculty.length);
+    if (!rect) continue;
+
+    ctx.save();
+    const br = (fac.brightness != null ? fac.brightness : 100) / 100;
+    if (br !== 1) ctx.filter = `brightness(${br})`;
+    ctx.drawImage(fac.imageObj, rect.sx, rect.sy, rect.sw, rect.sh, rect.destX, rect.destY, rect.destW, rect.destH);
+    ctx.restore();
+  }
+}
+
+// ===== PW BANNER RENDERER =====
+function renderPW(ctx, s) {
+  const preset = pwPresets.find(p => p.id === currentTemplate);
+  if (!preset) return;
+
+  // Background: subtle vertical gradient
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, preset.bgTop);
+  bg.addColorStop(1, preset.bgBot);
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle radial highlight in center-top
+  const rg = ctx.createRadialGradient(W * 0.5, H * 0.3, 0, W * 0.5, H * 0.3, W * 0.5);
+  rg.addColorStop(0, 'rgba(255,255,255,0.08)');
+  rg.addColorStop(1, 'transparent');
+  ctx.fillStyle = rg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Decorative circle in top-right (subtle, partially cut off)
+  ctx.save();
+  drawCircle(ctx, W - 80, -30, 180);
+  ctx.fillStyle = preset.circleColor;
+  ctx.fill();
+  ctx.restore();
+
+  // Draw faculty photos (behind text area, at bottom)
+  drawFacultyPhotos(ctx, s);
+
+  // Draw batch name text using Teko (upright, condensed, bold)
+  const text = s.batchName.toUpperCase();
+  ctx.save();
+
+  // Calculate base font size to fit text in banner width (reference images ~78px)
+  const maxTextW = W - 120;
+  let baseFontSize = 150;
+  ctx.font = `500 ${baseFontSize}px 'Teko', sans-serif`;
+  let textW = ctx.measureText(text).width;
+  if (textW > maxTextW) {
+    baseFontSize = Math.floor(baseFontSize * (maxTextW / textW));
+    if (baseFontSize < 36) baseFontSize = 36;
+  }
+
+  // Apply user scale
+  const fontSize = Math.round(baseFontSize * (textScalePct / 100));
+  ctx.font = `500 ${fontSize}px 'Teko', sans-serif`;
+  textW = ctx.measureText(text).width;
+
+  // Word wrap if needed
+  const lines = [];
+  if (textW <= maxTextW) {
+    lines.push(text);
+  } else {
+    const words = text.split(' ');
+    let line = '';
+    for (const w of words) {
+      const test = line ? line + ' ' + w : w;
+      if (ctx.measureText(test).width > maxTextW && line) {
+        lines.push(line);
+        line = w;
+      } else {
+        line = test;
+      }
+    }
+    if (line) lines.push(line);
+  }
+
+  const lineHeight = fontSize * 1.08;
+  const totalTextH = lines.length * lineHeight;
+
+  // Position from sliders (percentage-based)
+  const textStartX = (textPosXPct / 100) * W;
+  const textStartY = (textPosYPct / 100) * H;
+
+  // Measure max line width for bounding box
+  let maxLineW = 0;
+  for (const l of lines) {
+    const lw = ctx.measureText(l).width;
+    if (lw > maxLineW) maxLineW = lw;
+  }
+
+  // Store bounding box for hit detection & drag
+  ctx.fillStyle = preset.text;
+  const resolvedTextX = titleAutoCentered ? (W / 2) - (maxLineW / 2) : textStartX;
+  _lastTextBBox = {
+    x: resolvedTextX,
+    y: textStartY,
+    w: maxLineW,
+    h: totalTextH
+  };
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+
+  for (let i = 0; i < lines.length; i++) {
+    ctx.fillText(lines[i], resolvedTextX, textStartY + i * lineHeight);
+  }
+
+  ctx.restore();
+}
+
+// ===== CUSTOM TEMPLATE RENDERERS =====
+function renderGradientBurst(ctx,s){
+  const g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,s.colorPrimary);g.addColorStop(1,s.colorSecondary);ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  drawDecoCircles(ctx,s);drawDots(ctx,'#fff',60);drawDiagonalStripes(ctx,'#fff');
+  ctx.save();drawCircle(ctx,W*0.82,H*0.4,200);ctx.strokeStyle=rgba('#fff',0.06);ctx.lineWidth=40;ctx.stroke();ctx.restore();
+  drawFacultyPhotos(ctx,s);
+  drawLogo(ctx,s,50,40,52);drawBadge(ctx,s.badgeText,120,46,s.colorAccent,'#000');
+  ctx.font="900 64px 'Poppins',sans-serif";ctx.fillStyle='#fff';ctx.textAlign='left';ctx.textBaseline='top';
+  let ny=130;for(const l of measureText(ctx,s.batchName,700,ctx.font)){ctx.fillText(l,55,ny);ny+=72;}
+  if(s.batchYear){ctx.font="800 56px 'Poppins',sans-serif";ctx.fillStyle=rgba('#fff',0.2);ctx.fillText(s.batchYear,58,ny-5);ny+=50;}
+  ctx.font="500 22px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.85);ctx.fillText(s.tagline,58,ny+5);ny+=40;
+  drawBadge(ctx,s.batchClass+' \u00b7 '+s.examTarget,55,ny,rgba('#fff',0.18),'#fff');
+  drawPriceBadge(ctx,s,W-250,50);drawFeaturePills(ctx,s,55,H-140,700);drawTeacherNames(ctx,s,55,H-50);
+  if(s.validity){ctx.font="500 13px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.5);ctx.textAlign='right';ctx.fillText(s.validity,W-50,H-50);}
+  ctx.font="500 12px 'Inter',sans-serif";ctx.textAlign='right';ctx.fillStyle=rgba('#fff',0.5);ctx.fillText(s.language,W-50,H-30);
+}
+
+function renderModernSplit(ctx,s){
+  const sx=W*0.6;const g=ctx.createLinearGradient(0,0,sx,H);g.addColorStop(0,s.colorPrimary);g.addColorStop(1,s.colorSecondary);ctx.fillStyle=g;ctx.fillRect(0,0,sx,H);
+  const c=hexToRgb(s.colorPrimary);ctx.fillStyle=`rgb(${Math.max(0,c.r-30)},${Math.max(0,c.g-30)},${Math.max(0,c.b-30)})`;ctx.fillRect(sx,0,W-sx,H);
+  drawGrid(ctx,'#fff');ctx.beginPath();ctx.moveTo(sx-100,0);ctx.lineTo(sx+50,0);ctx.lineTo(sx-50,H);ctx.lineTo(sx-200,H);ctx.closePath();ctx.fillStyle=rgba('#fff',0.05);ctx.fill();
+  drawFacultyPhotos(ctx,s);
+  drawLogo(ctx,s,45,35,48);ctx.font="900 58px 'Poppins',sans-serif";ctx.fillStyle='#fff';ctx.textAlign='left';ctx.textBaseline='top';
+  let ny=120;for(const l of measureText(ctx,s.batchName,sx-120,ctx.font)){ctx.fillText(l,50,ny);ny+=66;}
+  ctx.font="500 20px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.8);ctx.fillText(s.tagline,52,ny+10);
+  drawBadge(ctx,s.batchClass,50,ny+50,rgba('#fff',0.2),'#fff');const cw2=ctx.measureText(s.batchClass).width+40;drawBadge(ctx,s.examTarget,60+cw2,ny+50,s.colorAccent,'#000');
+  drawFeaturePills(ctx,s,50,H-130,sx-120);drawTeacherNames(ctx,s,50,H-45);
+  const rx=sx+40;ctx.font="900 100px 'Poppins',sans-serif";ctx.fillStyle=rgba('#fff',0.06);ctx.textAlign='center';ctx.fillText(s.examTarget,sx+(W-sx)/2,200);
+  drawPriceBadge(ctx,s,rx,240);if(s.validity){ctx.font="600 16px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.6);ctx.textAlign='left';ctx.fillText(s.validity,rx,330);}
+  drawBadge(ctx,s.badgeText,rx,370,s.colorAccent,'#000');ctx.font="500 14px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.4);ctx.textAlign='left';ctx.fillText(s.stream+' \u00b7 '+s.language,rx,H-45);
+}
+
+function renderNeonDark(ctx,s){
+  ctx.fillStyle='#0a0a14';ctx.fillRect(0,0,W,H);drawGrid(ctx,s.colorPrimary);
+  let g1=ctx.createRadialGradient(W*0.2,H*0.3,0,W*0.2,H*0.3,300);g1.addColorStop(0,rgba(s.colorPrimary,0.2));g1.addColorStop(1,'transparent');ctx.fillStyle=g1;ctx.fillRect(0,0,W,H);
+  let g2=ctx.createRadialGradient(W*0.8,H*0.7,0,W*0.8,H*0.7,250);g2.addColorStop(0,rgba(s.colorSecondary,0.15));g2.addColorStop(1,'transparent');ctx.fillStyle=g2;ctx.fillRect(0,0,W,H);
+  drawDots(ctx,s.colorPrimary,40);ctx.strokeStyle=rgba(s.colorPrimary,0.3);ctx.lineWidth=2;ctx.strokeRect(30,30,W-60,H-60);
+  const cl=40;ctx.strokeStyle=s.colorAccent;ctx.lineWidth=3;[[30,30,1,1],[W-30,30,-1,1],[30,H-30,1,-1],[W-30,H-30,-1,-1]].forEach(([cx,cy,dx,dy])=>{ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+cl*dx,cy);ctx.stroke();ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx,cy+cl*dy);ctx.stroke();});
+  drawFacultyPhotos(ctx,s);
+  drawLogo(ctx,s,55,55,48);drawBadge(ctx,s.badgeText,120,63,s.colorAccent,'#000');
+  ctx.save();ctx.shadowColor=s.colorPrimary;ctx.shadowBlur=30;ctx.font="900 62px 'Poppins',sans-serif";ctx.fillStyle='#fff';ctx.textAlign='left';ctx.textBaseline='top';
+  let ny=140;for(const l of measureText(ctx,s.batchName,750,ctx.font)){ctx.fillText(l,58,ny);ny+=70;}ctx.restore();
+  ctx.font="900 120px 'Poppins',sans-serif";ctx.fillStyle=rgba(s.colorPrimary,0.07);ctx.textAlign='right';ctx.fillText(s.batchYear,W-50,180);
+  ctx.font="500 21px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.7);ctx.textAlign='left';ctx.fillText(s.tagline,60,ny+10);
+  drawBadge(ctx,s.batchClass+' \u00b7 '+s.examTarget+' \u00b7 '+s.stream,58,ny+50,rgba(s.colorPrimary,0.3),'#fff');
+  drawPriceBadge(ctx,s,W-260,55);drawFeaturePills(ctx,s,58,H-140,750);drawTeacherNames(ctx,s,58,H-50);
+  ctx.font="500 13px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.4);ctx.textAlign='right';ctx.fillText(s.validity+' \u00b7 '+s.language,W-50,H-50);
+}
+
+function renderWaveFlow(ctx,s){
+  const g=ctx.createLinearGradient(0,0,W*0.5,H);g.addColorStop(0,s.colorPrimary);g.addColorStop(1,s.colorSecondary);ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  drawWaves(ctx,rgba('#fff',0.06),H*0.5,40,3);drawWaves(ctx,rgba('#fff',0.04),H*0.6,30,2);drawWaves(ctx,rgba('#000',0.1),H*0.75,25,4);drawDots(ctx,'#fff',50);
+  drawFacultyPhotos(ctx,s);
+  drawLogo(ctx,s,50,35,48);drawBadge(ctx,s.badgeText,115,43,s.colorAccent,'#000');
+  ctx.font="900 60px 'Poppins',sans-serif";ctx.fillStyle='#fff';ctx.textAlign='left';ctx.textBaseline='top';let ny=115;for(const l of measureText(ctx,s.batchName,650,ctx.font)){ctx.fillText(l,55,ny);ny+=68;}
+  ctx.font="500 22px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.85);ctx.fillText(s.tagline,58,ny+5);drawBadge(ctx,s.batchClass+' \u00b7 '+s.examTarget,55,ny+45,rgba('#fff',0.2),'#fff');
+  drawPriceBadge(ctx,s,W-250,40);ctx.fillStyle=rgba('#000',0.25);ctx.fillRect(0,H-100,W,100);drawFeaturePills(ctx,s,55,H-85,W-350);drawTeacherNames(ctx,s,55,H-30);
+  ctx.font="500 13px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.5);ctx.textAlign='right';ctx.fillText(s.language+' \u00b7 '+s.validity,W-50,H-30);
+}
+
+function renderRoyalGold(ctx,s){
+  ctx.fillStyle='#0d0d1a';ctx.fillRect(0,0,W,H);
+  const tg=ctx.createLinearGradient(0,0,W,0);tg.addColorStop(0,rgba(s.colorAccent,0.15));tg.addColorStop(0.5,rgba(s.colorAccent,0.05));tg.addColorStop(1,rgba(s.colorAccent,0.15));ctx.fillStyle=tg;ctx.fillRect(0,0,W,6);
+  drawDiagonalStripes(ctx,s.colorAccent);drawDots(ctx,s.colorAccent,30);
+  drawCircle(ctx,W*0.9,H*0.2,250);ctx.strokeStyle=rgba(s.colorAccent,0.05);ctx.lineWidth=1;ctx.stroke();drawCircle(ctx,W*0.9,H*0.2,200);ctx.stroke();
+  ctx.fillStyle=rgba(s.colorAccent,0.08);ctx.fillRect(0,0,W,80);ctx.fillStyle=rgba(s.colorAccent,0.15);ctx.fillRect(0,78,W,2);
+  drawFacultyPhotos(ctx,s);
+  drawLogo(ctx,s,40,16,48);drawBadge(ctx,s.badgeText,105,24,s.colorAccent,'#000');drawPriceBadge(ctx,s,W-250,5);
+  ctx.font="900 64px 'Poppins',sans-serif";ctx.fillStyle=s.colorAccent;ctx.textAlign='left';ctx.textBaseline='top';let ny=110;for(const l of measureText(ctx,s.batchName,800,ctx.font)){ctx.fillText(l,50,ny);ny+=72;}
+  ctx.font="800 48px 'Poppins',sans-serif";ctx.fillStyle=rgba(s.colorAccent,0.15);ctx.fillText(s.batchYear,55,ny);
+  ctx.font="500 22px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.75);ctx.fillText(s.tagline,55,ny+55);
+  drawBadge(ctx,s.batchClass,50,ny+95,rgba(s.colorAccent,0.2),s.colorAccent);const cw3=ctx.measureText(s.batchClass).width+40;drawBadge(ctx,s.examTarget+' \u00b7 '+s.stream,60+cw3,ny+95,rgba('#fff',0.08),'#fff');
+  drawFeaturePills(ctx,s,50,H-130,W-100);drawTeacherNames(ctx,s,50,H-45);ctx.font="500 13px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.35);ctx.textAlign='right';ctx.fillText(s.validity+' \u00b7 '+s.language,W-50,H-45);
+}
+
+function renderSunsetBlaze(ctx,s){
+  const g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,s.colorPrimary);g.addColorStop(0.5,s.colorSecondary);g.addColorStop(1,'#fbbf24');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  ctx.save();ctx.beginPath();ctx.moveTo(W*0.55,0);ctx.lineTo(W,0);ctx.lineTo(W,H*0.5);ctx.closePath();ctx.fillStyle=rgba('#000',0.1);ctx.fill();ctx.restore();
+  drawFacultyPhotos(ctx,s);
+  drawLogo(ctx,s,50,40,52);drawBadge(ctx,s.badgeText,120,48,'#000','#fff');
+  ctx.font="900 66px 'Poppins',sans-serif";ctx.textAlign='left';ctx.textBaseline='top';let ny=130;for(const l of measureText(ctx,s.batchName,700,ctx.font)){ctx.fillStyle=rgba('#000',0.2);ctx.fillText(l,57,ny+2);ctx.fillStyle='#fff';ctx.fillText(l,55,ny);ny+=74;}
+  ctx.font="600 24px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.9);ctx.fillText(s.tagline,58,ny+5);drawBadge(ctx,s.batchClass+' \u00b7 '+s.examTarget,55,ny+50,rgba('#000',0.25),'#fff');
+  drawPriceBadge(ctx,s,W-250,50);drawFeaturePills(ctx,s,55,H-135,700);drawTeacherNames(ctx,s,55,H-50);
+  ctx.font="500 13px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.5);ctx.textAlign='right';ctx.fillText(s.validity+' \u00b7 '+s.language,W-50,H-50);
+}
+
+function renderOceanDeep(ctx,s){
+  const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#0c1929');g.addColorStop(1,'#0a1628');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  let g1=ctx.createRadialGradient(W*0.15,H*0.8,0,W*0.15,H*0.8,350);g1.addColorStop(0,rgba(s.colorSecondary,0.2));g1.addColorStop(1,'transparent');ctx.fillStyle=g1;ctx.fillRect(0,0,W,H);
+  let g2=ctx.createRadialGradient(W*0.8,H*0.15,0,W*0.8,H*0.15,300);g2.addColorStop(0,rgba(s.colorPrimary,0.15));g2.addColorStop(1,'transparent');ctx.fillStyle=g2;ctx.fillRect(0,0,W,H);
+  drawGrid(ctx,s.colorSecondary);drawDots(ctx,s.colorSecondary,50);ctx.fillStyle=rgba(s.colorSecondary,0.3);ctx.fillRect(50,100,W-100,1);
+  drawFacultyPhotos(ctx,s);
+  drawLogo(ctx,s,50,35,48);drawBadge(ctx,s.badgeText,115,43,s.colorSecondary,'#000');
+  ctx.font="900 90px 'Poppins',sans-serif";ctx.fillStyle=rgba(s.colorSecondary,0.08);ctx.textAlign='right';ctx.fillText(s.batchYear,W-40,80);
+  ctx.font="900 60px 'Poppins',sans-serif";ctx.fillStyle='#fff';ctx.textAlign='left';ctx.textBaseline='top';let ny=125;for(const l of measureText(ctx,s.batchName,750,ctx.font)){ctx.fillText(l,55,ny);ny+=68;}
+  ctx.font="500 22px 'Inter',sans-serif";ctx.fillStyle=s.colorSecondary;ctx.fillText(s.tagline,58,ny+8);
+  ctx.font="500 16px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.5);ctx.fillText(s.batchClass+' \u00b7 '+s.examTarget+' \u00b7 '+s.stream+' \u00b7 '+s.language,58,ny+45);
+  drawPriceBadge(ctx,s,W-260,110);ctx.fillStyle=rgba(s.colorSecondary,0.05);ctx.fillRect(0,H-120,W,120);ctx.fillStyle=rgba(s.colorSecondary,0.2);ctx.fillRect(0,H-120,W,1);
+  drawFeaturePills(ctx,s,55,H-105,W-330);drawTeacherNames(ctx,s,55,H-40);ctx.font="500 13px 'Inter',sans-serif";ctx.fillStyle=rgba('#fff',0.4);ctx.textAlign='right';ctx.fillText(s.validity,W-50,H-40);
+}
+
+function renderCleanMinimal(ctx,s){
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.fillStyle=rgba(s.colorSecondary,0.03);ctx.fillRect(0,0,W,H);
+  const ag=ctx.createLinearGradient(0,0,0,H);ag.addColorStop(0,s.colorSecondary);ag.addColorStop(1,s.colorPrimary);ctx.fillStyle=ag;ctx.fillRect(0,0,8,H);
+  ctx.fillStyle=s.colorSecondary;ctx.fillRect(8,0,W-8,5);
+  ctx.beginPath();ctx.moveTo(W,0);ctx.lineTo(W-300,0);ctx.lineTo(W,200);ctx.closePath();ctx.fillStyle=rgba(s.colorSecondary,0.06);ctx.fill();
+  for(let dx=W*0.65;dx<W-30;dx+=18)for(let dy=H*0.55;dy<H-30;dy+=18){drawCircle(ctx,dx,dy,1.5);ctx.fillStyle=rgba(s.colorSecondary,0.08);ctx.fill();}
+  drawFacultyPhotos(ctx,s);
+  ctx.save();drawRoundedRect(ctx,40,35,48,48,10);ctx.fillStyle=s.colorSecondary;ctx.fill();ctx.font="900 20px 'Poppins',sans-serif";ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(s.logoText,64,60);ctx.restore();
+  drawBadge(ctx,s.badgeText,105,42,rgba(s.colorSecondary,0.1),s.colorSecondary);
+  ctx.font="900 58px 'Poppins',sans-serif";ctx.fillStyle='#111827';ctx.textAlign='left';ctx.textBaseline='top';let ny=115;for(const l of measureText(ctx,s.batchName,700,ctx.font)){ctx.fillText(l,45,ny);ny+=66;}
+  ctx.font="800 42px 'Poppins',sans-serif";ctx.fillStyle=s.colorSecondary;ctx.fillText(s.batchYear,48,ny);ny+=50;
+  ctx.font="500 20px 'Inter',sans-serif";ctx.fillStyle='#4b5563';ctx.fillText(s.tagline,48,ny);
+  drawBadge(ctx,s.batchClass+' \u00b7 '+s.examTarget,45,ny+40,rgba(s.colorSecondary,0.1),s.colorSecondary);
+  ctx.save();drawRoundedRect(ctx,W-240,35,200,70,12);ctx.fillStyle=rgba(s.colorSecondary,0.07);ctx.fill();ctx.strokeStyle=rgba(s.colorSecondary,0.15);ctx.lineWidth=1;ctx.stroke();
+  ctx.font="900 30px 'Poppins',sans-serif";ctx.fillStyle=s.colorSecondary;ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText('\u20B9'+s.discountPrice,W-224,42);
+  if(s.originalPrice&&s.originalPrice!==s.discountPrice){ctx.font="500 14px 'Inter',sans-serif";ctx.fillStyle='#9ca3af';const opx=W-224;ctx.fillText('\u20B9'+s.originalPrice,opx,78);const ow=ctx.measureText('\u20B9'+s.originalPrice).width;ctx.strokeStyle='#9ca3af';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(opx,86);ctx.lineTo(opx+ow,86);ctx.stroke();}
+  ctx.restore();
+  ctx.font="600 13px 'Inter',sans-serif";let cx=45,cy=H-130;
+  for(const feat of s.features){const tw=ctx.measureText(feat).width;const pW=tw+44,pH2=28;if(cx+pW>750&&cx>45){cx=45;cy+=pH2+8;}
+    drawRoundedRect(ctx,cx,cy,pW,pH2,14);ctx.fillStyle=rgba(s.colorSecondary,0.08);ctx.fill();ctx.strokeStyle=rgba(s.colorSecondary,0.15);ctx.lineWidth=0.8;ctx.stroke();
+    ctx.font="bold 14px sans-serif";ctx.fillStyle=s.colorSecondary;ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText('\u2713',cx+10,cy+pH2/2);
+    ctx.font="600 13px 'Inter',sans-serif";ctx.fillStyle='#374151';ctx.fillText(feat,cx+28,cy+pH2/2);cx+=pW+8;}
+  ctx.font="500 14px 'Inter',sans-serif";ctx.fillStyle='#6b7280';ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText('Faculty: '+s.teachers.join(' \u00b7 '),45,H-45);
+  ctx.font="500 13px 'Inter',sans-serif";ctx.fillStyle='#9ca3af';ctx.textAlign='right';ctx.fillText(s.stream+' \u00b7 '+s.language+' \u00b7 '+s.validity,W-40,H-45);
+}
+
+// ===== OVERLAY HELPERS =====
+function getAutoOverlayText() {
+  if (features.length === 0) return 'Live Classes, DPPs & more';
+  if (features.length <= 3) return features.join(', ');
+  return features.slice(0, 2).join(', ') + ' & more';
+}
+
+function toggleOverlay(type, checked) {
+  if (type === 'box') {
+    showInfoBox = checked;
+    document.getElementById('boxControls').style.display = checked ? 'block' : 'none';
+    if (!checked) boxControlsOpen = false;
+    if (checked && !document.getElementById('boxTextInput').value) {
+      document.getElementById('boxTextInput').value = getAutoOverlayText();
+    }
+  } else {
+    showInfoTag = checked;
+    document.getElementById('tagControls').style.display = checked ? 'block' : 'none';
+    if (!checked) tagControlsOpen = false;
+    if (checked && !document.getElementById('tagTextInput').value) {
+      document.getElementById('tagTextInput').value = getAutoOverlayText();
+    }
+  }
+  syncOverlayControlStates();
+  render();
+}
+
+function onBoxSlider(field, value) {
+  const v = parseFloat(value);
+  if (field === 'posX') { boxPosXPct = v; document.getElementById('boxLbl-posX').textContent = Math.round(v) + '%'; }
+  if (field === 'posY') { boxPosYPct = v; document.getElementById('boxLbl-posY').textContent = Math.round(v) + '%'; }
+  if (field === 'scale') { boxScalePct = v; document.getElementById('boxLbl-scale').textContent = Math.round(v) + '%'; }
+  render();
+}
+
+function onTagSlider(field, value) {
+  const v = parseFloat(value);
+  if (field === 'posX') { tagPosXPct = TAG_LOCKED_POS_X; document.getElementById('tagLbl-posX').textContent = 'Center'; }
+  if (field === 'posY') { tagPosYPct = TAG_LOCKED_POS_Y; document.getElementById('tagLbl-posY').textContent = 'Bottom'; }
+  if (field === 'scale') { tagScalePct = v; document.getElementById('tagLbl-scale').textContent = Math.round(v) + '%'; }
+  render();
+}
+
+function getCurrentPWPreset() {
+  return pwPresets.find(p => p.id === currentTemplate) || pwPresets[0];
+}
+
+// Draw Info Box: wide dark pill at bottom with white text (exactly like box sample)
+function drawBoxOverlay(ctx) {
+  _lastBoxBBox = null;
+  if (!showInfoBox) return;
+  const text = (document.getElementById('boxTextInput') && document.getElementById('boxTextInput').value) || getAutoOverlayText();
+  if (!text) return;
+  const scale = boxScalePct / 100;
+  const fontSize = Math.round(42 * scale);
+  const preset = getCurrentPWPreset();
+  ctx.save();
+  ctx.font = `500 ${fontSize}px 'Teko', sans-serif`;
+  const tw = ctx.measureText(text).width;
+  const bw = Math.max(tw + 68 * scale, 364 * scale);
+  const bh = 112 * scale;
+  const radius = 16 * scale;
+  const cx = (boxPosXPct / 100) * W;
+  const cy = (boxPosYPct / 100) * H;
+  const x = cx - bw / 2;
+  const y = cy - bh / 2;
+  _lastBoxBBox = { x, y, w: bw, h: bh };
+  drawRoundedRect(ctx, x, y, bw, bh, radius);
+  ctx.fillStyle = preset.boxFill || '#9260a8';
+  ctx.fill();
+  ctx.fillStyle = preset.boxText || '#ffffff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text.toUpperCase(), cx, cy + 2 * scale);
+  ctx.restore();
+}
+
+// Draw Tag: compact dark rounded rectangle with thin border (matches tag sample)
+function drawTagOverlay(ctx) {
+  if (!showInfoTag) return;
+  tagPosXPct = TAG_LOCKED_POS_X;
+  tagPosYPct = TAG_LOCKED_POS_Y;
+  const text = (document.getElementById('tagTextInput') && document.getElementById('tagTextInput').value) || getAutoOverlayText();
+  if (!text) return;
+  const scale = tagScalePct / 100;
+  const fontSize = Math.round(34 * scale);
+  ctx.save();
+  ctx.font = `500 ${fontSize}px 'Teko', sans-serif`;
+  const tw = ctx.measureText(text).width;
+  const bw = Math.max(tw + 108 * scale, 554 * scale);
+  const visibleHeight = 129 * scale;
+  const fullHeight = visibleHeight * 2;
+  const cx = (TAG_LOCKED_POS_X / 100) * W;
+  const cy = (TAG_LOCKED_POS_Y / 100) * H;
+  const x = cx - bw / 2;
+  const y = cy - visibleHeight / 2;
+  const fullY = y;
+  const radius = fullHeight * 0.34;
+  ctx.shadowColor = 'rgba(0,0,0,0.18)';
+  ctx.shadowBlur = 8;
+  ctx.shadowOffsetY = 1;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x - 8, y - 8, bw + 16, visibleHeight + 16);
+  ctx.clip();
+  drawRoundedRect(ctx, x, fullY, bw, fullHeight, radius);
+  ctx.fillStyle = TAG_STYLE.fill;
+  ctx.fill();
+  ctx.shadowColor = 'transparent';
+  drawRoundedRect(ctx, x, fullY, bw, fullHeight, radius);
+  ctx.strokeStyle = TAG_STYLE.stroke;
+  ctx.lineWidth = 8 * scale;
+  ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = TAG_STYLE.text;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  const tagLabel = text;
+  const tagMetrics = ctx.measureText(tagLabel);
+  const tagAscent = tagMetrics.actualBoundingBoxAscent || fontSize * 0.72;
+  const tagDescent = tagMetrics.actualBoundingBoxDescent || fontSize * 0.18;
+  const tagBaselineY = y + (visibleHeight / 2) + ((tagAscent - tagDescent) / 2) - (24 * scale);
+  ctx.fillText(tagLabel, cx, tagBaselineY);
+  ctx.restore();
+}
+
+// ===== MAIN RENDER =====
+const CUSTOM_RENDERERS = {
+  gradient_burst: renderGradientBurst,
+  modern_split: renderModernSplit,
+  neon_dark: renderNeonDark,
+  wave_flow: renderWaveFlow,
+  royal_gold: renderRoyalGold,
+  sunset_blaze: renderSunsetBlaze,
+  ocean_deep: renderOceanDeep,
+  clean_minimal: renderCleanMinimal,
+};
+
+function render() {
+  const canvas = document.getElementById('bannerCanvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+  const s = getState();
+
+  if (isPWTemplate()) {
+    renderPW(ctx, s);
+  } else {
+    _lastTextBBox = null; // no text drag for custom templates
+    const r = CUSTOM_RENDERERS[s.template];
+    if (r) r(ctx, s);
+  }
+  // Draw overlays on top of everything (box & tag)
+  drawBoxOverlay(ctx);
+  drawTagOverlay(ctx);
+}
+
+function downloadBanner() {
+  render();
+  const canvas = document.getElementById('bannerCanvas');
+  const link = document.createElement('a');
+  const name = (document.getElementById('batchName').value.replace(/[^a-zA-Z0-9 ]/g,'').trim().replace(/\s+/g,'_') || 'banner');
+  link.download = name + `_${W}x${H}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+</script>
+</body>
+</html>
