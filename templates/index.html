@@ -115,6 +115,9 @@
     .faculty-card .fc-advanced-toggle { display:flex; align-items:center; justify-content:space-between; width:100%; padding:8px 10px; background:var(--surface-3); border:1px solid var(--border); color:var(--text); border-radius:6px; cursor:pointer; font-size:11px; font-weight:700; font-family:inherit; margin-top:2px; }
     .faculty-card .fc-advanced-toggle .arrow { transition:transform 0.2s ease; }
     .faculty-card .fc-advanced-toggle.open .arrow { transform:rotate(180deg); }
+    .faculty-upload-options { display:flex; gap:8px; margin-top:10px; }
+    .faculty-upload-options.hidden { display:none; }
+    .faculty-upload-options .fc-btn { flex:1; justify-content:center; }
     .overlay-toggle { display:flex; align-items:center; justify-content:space-between; width:100%; padding:8px 10px; background:var(--surface-3); border:1px solid var(--border); color:var(--text); border-radius:6px; cursor:pointer; font-size:11px; font-weight:700; font-family:inherit; margin-bottom:8px; }
     .overlay-toggle .arrow { transition:transform 0.2s ease; }
     .overlay-toggle.open .arrow { transform:rotate(180deg); }
@@ -289,8 +292,12 @@
     </div>
 
     <div class="section-title">Faculty Photos</div>
+    <button class="btn-add-faculty" onclick="toggleFacultyUploadOptions()">+ Add Faculty Photo(s)</button>
+    <div id="facultyUploadOptions" class="faculty-upload-options hidden">
+      <button type="button" class="fc-btn" onclick="addFaculty(1)">Upload To Bottom Row</button>
+      <button type="button" class="fc-btn" onclick="addFaculty(2)">Upload To Upper Row</button>
+    </div>
     <div id="facultyList"></div>
-    <button class="btn-add-faculty" onclick="addFaculty()">+ Add Faculty Photo(s)</button>
     <input type="file" id="facultyFileInput" accept="image/*" multiple style="display:none" />
     <div class="drag-hint">Tip: Click and drag faculty photos or the batch name text directly on the canvas to reposition them.</div>
 
@@ -464,6 +471,7 @@ let facultyPhotos = [];
 let uploadedCustomTemplate = null;
 let _facId = 0;
 let _pendingFacultyId = null;
+let _pendingFacultyLine = 1;
 
 // Crop state
 let cropFacultyId = null;
@@ -926,14 +934,40 @@ function onCustomTemplateSelected(e) {
 }
 
 // ===== FACULTY PHOTO MANAGEMENT =====
-function addFaculty() {
+function getFacultyLine(line) {
+  return facultyPhotos.filter(f => (f.line || 1) === line);
+}
+
+function toggleFacultyUploadOptions() {
+  const options = document.getElementById('facultyUploadOptions');
+  if (!options) return;
+  options.classList.toggle('hidden');
+}
+
+function addFaculty(line = 1) {
+  if (line === 2) {
+    const line1Count = getFacultyLine(1).length;
+    const line2Count = getFacultyLine(2).length;
+    if (line1Count < 2) {
+      alert('Add at least 2 faculty photos in Line 1 before uploading to Line 2.');
+      return;
+    }
+    if (line2Count >= line1Count - 1) {
+      alert(`Line 2 can hold up to ${line1Count - 1} faculty photo(s) for the current Line 1 layout.`);
+      return;
+    }
+  }
+
+  _pendingFacultyLine = line;
   _pendingFacultyId = null;
   document.getElementById('facultyFileInput').removeAttribute('data-replace-mode');
+  const options = document.getElementById('facultyUploadOptions');
+  if (options) options.classList.add('hidden');
   document.getElementById('facultyFileInput').click();
 }
 
 function onFacultyFileSelected(e) {
-  const files = Array.from(e.target.files || []);
+  let files = Array.from(e.target.files || []);
   if (!files.length) return;
   const isReplaceMode = e.target.getAttribute('data-replace-mode') === 'true';
   e.target.value = '';
@@ -953,6 +987,7 @@ function onFacultyFileSelected(e) {
         loadFacultyImage(f);
       }
       _pendingFacultyId = null;
+      _pendingFacultyLine = 1;
       renderFacultyList();
     };
     reader.readAsDataURL(file);
@@ -960,6 +995,20 @@ function onFacultyFileSelected(e) {
   }
 
   let pendingReads = files.length;
+  const targetLine = _pendingFacultyLine || 1;
+  if (!isReplaceMode && targetLine === 2) {
+    const availableSlots = Math.max(0, getFacultyLine(1).length - 1 - getFacultyLine(2).length);
+    if (availableSlots <= 0) {
+      _pendingFacultyLine = 1;
+      alert('Line 2 is full for the current Line 1 layout.');
+      return;
+    }
+    if (files.length > availableSlots) {
+      alert(`Only ${availableSlots} faculty photo(s) can be added to Line 2 right now. The remaining files were skipped.`);
+      files = files.slice(0, availableSlots);
+      pendingReads = files.length;
+    }
+  }
   files.forEach((file) => {
     const reader = new FileReader();
     reader.onload = function(ev) {
@@ -980,11 +1029,13 @@ function onFacultyFileSelected(e) {
         baseWidth: 235,
         controlsOpen: false,
         positionLocked: false,
+        line: targetLine,
       };
       facultyPhotos.push(fac);
       loadFacultyImage(fac);
       pendingReads -= 1;
       if (pendingReads === 0) {
+        _pendingFacultyLine = 1;
         autoArrangeFaculty();
         renderFacultyList();
       }
@@ -994,13 +1045,18 @@ function onFacultyFileSelected(e) {
 }
 
 function autoArrangeFaculty(preserveAdjustments = false) {
-  const n = facultyPhotos.length;
-  if (n === 0) return;
-  const layout = getFacultyStripLayout(n);
-  const step = n === 1 ? layout.itemWidth : (layout.stripWidth - layout.itemWidth) / (n - 1);
-  for (let i = 0; i < n; i++) {
-    const fac = facultyPhotos[i];
-    const centerX = layout.leftMargin + (layout.itemWidth / 2) + i * step;
+  const line1 = getFacultyLine(1);
+  const line2 = getFacultyLine(2);
+  const layoutCount = Math.max(1, line1.length || facultyPhotos.length);
+  const layout = getFacultyStripLayout(layoutCount);
+  const line1Step = layoutCount === 1 ? layout.itemWidth : (layout.stripWidth - layout.itemWidth) / (layoutCount - 1);
+  const line1Centers = Array.from({ length: layoutCount }, (_, i) => layout.leftMargin + (layout.itemWidth / 2) + i * line1Step);
+  const line2Centers = line1Centers.length > 1
+    ? line1Centers.slice(0, -1).map((center, i) => (center + line1Centers[i + 1]) / 2)
+    : line1Centers;
+
+  line1.forEach((fac, index) => {
+    const centerX = line1Centers[Math.min(index, line1Centers.length - 1)];
     if (!(preserveAdjustments && fac.positionLocked)) {
       fac.posX = (centerX / W) * 100;
       if (!preserveAdjustments) {
@@ -1009,7 +1065,19 @@ function autoArrangeFaculty(preserveAdjustments = false) {
       }
       fac.baseWidth = layout.itemWidth;
     }
-  }
+  });
+
+  line2.forEach((fac, index) => {
+    const centerX = line2Centers[Math.min(index, line2Centers.length - 1)] ?? line1Centers[Math.min(index, line1Centers.length - 1)];
+    if (!(preserveAdjustments && fac.positionLocked)) {
+      fac.posX = (centerX / W) * 100;
+      if (!preserveAdjustments) {
+        fac.posY = -14;
+        fac.scale = 100;
+      }
+      fac.baseWidth = layout.itemWidth;
+    }
+  });
 }
 
 function loadFacultyImage(fac) {
@@ -1115,8 +1183,12 @@ function onFacultyCardDragEnd(event) {
 }
 
 function onFacultyCardDragOver(id, event) {
-  event.preventDefault();
   if (draggedFacultyId === null || draggedFacultyId === id) return;
+  const sourceFaculty = facultyPhotos.find(f => f.id === draggedFacultyId);
+  const targetFaculty = facultyPhotos.find(f => f.id === id);
+  if (!sourceFaculty || !targetFaculty) return;
+  if ((sourceFaculty.line || 1) !== (targetFaculty.line || 1)) return;
+  event.preventDefault();
   event.dataTransfer.dropEffect = 'move';
   event.currentTarget.classList.add('drag-target');
 }
@@ -1133,6 +1205,9 @@ function onFacultyCardDrop(targetId, event) {
   const sourceIndex = facultyPhotos.findIndex(f => f.id === sourceId);
   const targetIndex = facultyPhotos.findIndex(f => f.id === targetId);
   if (sourceIndex === -1 || targetIndex === -1) return;
+  const sourceFaculty = facultyPhotos[sourceIndex];
+  const targetFaculty = facultyPhotos[targetIndex];
+  if ((sourceFaculty.line || 1) !== (targetFaculty.line || 1)) return;
   const [item] = facultyPhotos.splice(sourceIndex, 1);
   facultyPhotos.splice(targetIndex, 0, item);
   autoArrangeFaculty(true);
@@ -1155,6 +1230,8 @@ function unlockFacultyCardDrag(event) {
 
 function renderFacultyList() {
   const container = document.getElementById('facultyList');
+  let line1Position = 0;
+  let line2Position = 0;
   container.innerHTML = facultyPhotos.map((f, index) => `
     <div
       class="faculty-card"
@@ -1176,7 +1253,7 @@ function renderFacultyList() {
         </div>
       </div>
       <div class="fc-order">
-        <span class="fc-position">Position ${index + 1}</span>
+        <span class="fc-position">Line ${f.line || 1} • Position ${(f.line || 1) === 2 ? ++line2Position : ++line1Position}</span>
         <span class="fc-drag-handle">Drag To Reorder</span>
       </div>
       <div class="fc-actions">
