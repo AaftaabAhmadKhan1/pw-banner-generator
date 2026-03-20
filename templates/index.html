@@ -222,7 +222,7 @@
 
     <div class="section-title">Batch Name</div>
     <div class="form-group">
-      <input type="text" id="batchName" value="" placeholder="Enter batch name" oninput="render()" />
+      <textarea id="batchName" rows="3" placeholder="Enter batch name" oninput="render()" style="min-height:72px;resize:vertical;"></textarea>
     </div>
     <div class="fc-sliders" id="textSliders">
       <label>Horizontal <span id="tlbl-posX">50%</span></label>
@@ -235,7 +235,7 @@
 
     <div class="section-title">Sub Heading</div>
     <div class="form-group">
-      <input type="text" id="subHeadingInput" value="" placeholder="Enter sub heading" oninput="onSubHeadingInput(this.value,'main')" />
+      <textarea id="subHeadingInput" rows="3" placeholder="Enter sub heading" oninput="onSubHeadingInput(this.value,'main')" style="min-height:72px;resize:vertical;"></textarea>
     </div>
     <div class="fc-sliders" id="subTextSliders">
       <label>Horizontal <span id="sublbl-posX">50%</span></label>
@@ -290,8 +290,8 @@
 
     <div class="section-title">Faculty Photos</div>
     <div id="facultyList"></div>
-    <button class="btn-add-faculty" onclick="addFaculty()">+ Add Faculty Photo</button>
-    <input type="file" id="facultyFileInput" accept="image/*" style="display:none" />
+    <button class="btn-add-faculty" onclick="addFaculty()">+ Add Faculty Photo(s)</button>
+    <input type="file" id="facultyFileInput" accept="image/*" multiple style="display:none" />
     <div class="drag-hint">Tip: Click and drag faculty photos or the batch name text directly on the canvas to reposition them.</div>
 
     <div class="section-title" style="cursor:pointer;" onclick="toggleCustom()">
@@ -474,6 +474,8 @@ let draggedFacultyId = null;
 // Drag state for canvas
 let dragFacultyId = null;
 let dragOffsetX = 0, dragOffsetY = 0;
+let dragStartMouseX = 0, dragStartMouseY = 0;
+let facultyDragMoved = false;
 let draggingText = false;
 let draggingSubText = false;
 let draggingBox = false;
@@ -926,18 +928,22 @@ function onCustomTemplateSelected(e) {
 // ===== FACULTY PHOTO MANAGEMENT =====
 function addFaculty() {
   _pendingFacultyId = null;
+  document.getElementById('facultyFileInput').removeAttribute('data-replace-mode');
   document.getElementById('facultyFileInput').click();
 }
 
 function onFacultyFileSelected(e) {
-  const file = e.target.files[0];
-  if (!file) return;
+  const files = Array.from(e.target.files || []);
+  if (!files.length) return;
+  const isReplaceMode = e.target.getAttribute('data-replace-mode') === 'true';
   e.target.value = '';
+  e.target.removeAttribute('data-replace-mode');
 
-  const reader = new FileReader();
-  reader.onload = function(ev) {
-    const dataUrl = ev.target.result;
-    if (_pendingFacultyId !== null) {
+  if (_pendingFacultyId !== null) {
+    const file = files[0];
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      const dataUrl = ev.target.result;
       const f = facultyPhotos.find(x => x.id === _pendingFacultyId);
       if (f) {
         f.originalDataUrl = dataUrl;
@@ -947,9 +953,17 @@ function onFacultyFileSelected(e) {
         loadFacultyImage(f);
       }
       _pendingFacultyId = null;
-    } else {
-      // Position new faculty: spread evenly across bottom
-      const count = facultyPhotos.length;
+      renderFacultyList();
+    };
+    reader.readAsDataURL(file);
+    return;
+  }
+
+  let pendingReads = files.length;
+  files.forEach((file) => {
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      const dataUrl = ev.target.result;
       const fac = {
         id: ++_facId,
         name: 'Faculty ' + _facId,
@@ -965,14 +979,18 @@ function onFacultyFileSelected(e) {
         brightness: 100,
         baseWidth: 235,
         controlsOpen: false,
+        positionLocked: false,
       };
       facultyPhotos.push(fac);
-      autoArrangeFaculty();
       loadFacultyImage(fac);
-    }
-    renderFacultyList();
-  };
-  reader.readAsDataURL(file);
+      pendingReads -= 1;
+      if (pendingReads === 0) {
+        autoArrangeFaculty();
+        renderFacultyList();
+      }
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 function autoArrangeFaculty(preserveAdjustments = false) {
@@ -981,13 +999,16 @@ function autoArrangeFaculty(preserveAdjustments = false) {
   const layout = getFacultyStripLayout(n);
   const step = n === 1 ? layout.itemWidth : (layout.stripWidth - layout.itemWidth) / (n - 1);
   for (let i = 0; i < n; i++) {
+    const fac = facultyPhotos[i];
     const centerX = layout.leftMargin + (layout.itemWidth / 2) + i * step;
-    facultyPhotos[i].posX = (centerX / W) * 100;
-    if (!preserveAdjustments) {
-      facultyPhotos[i].posY = 0;
-      facultyPhotos[i].scale = 100;
+    if (!(preserveAdjustments && fac.positionLocked)) {
+      fac.posX = (centerX / W) * 100;
+      if (!preserveAdjustments) {
+        fac.posY = 0;
+        fac.scale = 100;
+      }
+      fac.baseWidth = layout.itemWidth;
     }
-    facultyPhotos[i].baseWidth = layout.itemWidth;
   }
 }
 
@@ -1006,6 +1027,7 @@ function removeFaculty(id) {
 
 function replaceFacultyPhoto(id) {
   _pendingFacultyId = id;
+  document.getElementById('facultyFileInput').setAttribute('data-replace-mode', 'true');
   document.getElementById('facultyFileInput').click();
 }
 
@@ -1061,6 +1083,14 @@ function toggleFacultyControls(id) {
   if (!fac) return;
   fac.controlsOpen = !fac.controlsOpen;
   renderFacultyList();
+}
+
+function toggleFacultyPositionLock(id) {
+  const fac = facultyPhotos.find(f => f.id === id);
+  if (!fac) return;
+  fac.positionLocked = !fac.positionLocked;
+  renderFacultyList();
+  render();
 }
 
 function onFacultyCardDragStart(id, event) {
@@ -1160,6 +1190,7 @@ function renderFacultyList() {
         <button class="fc-btn" onclick="openErase(${f.id})">Erase</button>
         `}
         <button class="fc-btn" onclick="replaceFacultyPhoto(${f.id})">Replace</button>
+        <button class="fc-btn ${f.positionLocked ? 'done' : ''}" onclick="toggleFacultyPositionLock(${f.id})" title="${f.positionLocked ? 'Unlock Position' : 'Lock Position'}" aria-label="${f.positionLocked ? 'Unlock Position' : 'Lock Position'}">${f.positionLocked ? '&#128274;' : '&#128275;'}</button>
       </div>
       <button class="fc-advanced-toggle ${f.controlsOpen ? 'open' : ''}" onclick="toggleFacultyControls(${f.id})">
         <span>Adjust Position & Light</span>
@@ -1432,20 +1463,7 @@ function initCanvasDrag() {
     const mx = (e.clientX - rect.left) * scaleX;
     const my = (e.clientY - rect.top) * scaleY;
 
-    // Check batch name text hit first
-    if (_lastTextBBox) {
-      const b = _lastTextBBox;
-      if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
-        draggingText = true;
-        titleAutoCentered = false;
-        dragOffsetX = mx - (textPosXPct / 100) * W;
-        dragOffsetY = my - (textPosYPct / 100) * H;
-        canvas.style.cursor = 'grabbing';
-        e.preventDefault();
-        return;
-      }
-    }
-
+    // Prioritize sub heading hit detection when it overlaps the main title.
     if (_lastSubTextBBox) {
       const b = _lastSubTextBBox;
       if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
@@ -1453,6 +1471,19 @@ function initCanvasDrag() {
         subHeadingAutoCentered = false;
         dragOffsetX = mx - (subTextPosXPct / 100) * W;
         dragOffsetY = my - (subTextPosYPct / 100) * H;
+        canvas.style.cursor = 'grabbing';
+        e.preventDefault();
+        return;
+      }
+    }
+
+    if (_lastTextBBox) {
+      const b = _lastTextBBox;
+      if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
+        draggingText = true;
+        titleAutoCentered = false;
+        dragOffsetX = mx - (textPosXPct / 100) * W;
+        dragOffsetY = my - (textPosYPct / 100) * H;
         canvas.style.cursor = 'grabbing';
         e.preventDefault();
         return;
@@ -1490,9 +1521,15 @@ function initCanvasDrag() {
       if (!drawRect) continue;
 
       if (mx >= drawRect.destX && mx <= drawRect.destX + drawRect.destW && my >= drawRect.destY && my <= drawRect.destY + drawRect.destH) {
+        if (fac.positionLocked) {
+          return;
+        }
         dragFacultyId = fac.id;
         dragOffsetX = mx - drawRect.destX;
         dragOffsetY = my - drawRect.destY;
+        dragStartMouseX = mx;
+        dragStartMouseY = my;
+        facultyDragMoved = false;
         canvas.style.cursor = 'grabbing';
         e.preventDefault();
         return;
@@ -1548,6 +1585,11 @@ function initCanvasDrag() {
       const facIndex = facultyPhotos.findIndex(f => f.id === fac.id);
       const drawRect = getFacultyDrawRect(fac, facIndex, facultyPhotos.length);
       if (!drawRect) return;
+      const movedDistance = Math.hypot(mx - dragStartMouseX, my - dragStartMouseY);
+      if (movedDistance < 6) {
+        return;
+      }
+      facultyDragMoved = true;
       const nextDestX = mx - dragOffsetX;
       const nextDestY = my - dragOffsetY;
       fac.posX = Math.max(0, Math.min(100, ((nextDestX + drawRect.destW / 2) / W) * 100));
@@ -1626,6 +1668,7 @@ function initCanvasDrag() {
     }
     if (dragFacultyId !== null) {
       dragFacultyId = null;
+      facultyDragMoved = false;
       document.getElementById('bannerCanvas').style.cursor = 'default';
     }
   });
@@ -1649,6 +1692,7 @@ function initCanvasDrag() {
     }
     if (dragFacultyId !== null) {
       dragFacultyId = null;
+      facultyDragMoved = false;
       document.getElementById('bannerCanvas').style.cursor = 'default';
     }
   });
@@ -1816,16 +1860,21 @@ function drawFacultyPhotos(ctx, s) {
 
 // ===== PW BANNER RENDERER =====
 function drawMainTitle(ctx, s) {
-  const text = s.batchName.toUpperCase();
+  const text = (s.batchName || '').replace(/\r\n/g, '\n').toUpperCase().trim();
   _lastTextBBox = null;
   if (!text) return;
   const preset = pwPresets.find(p => p.id === currentTemplate);
   ctx.save();
 
   const maxTextW = W - 120;
+  const manualLines = text.split('\n').map(line => line.trim()).filter(Boolean);
+  if (!manualLines.length) {
+    ctx.restore();
+    return;
+  }
   let baseFontSize = 150;
   ctx.font = `500 ${baseFontSize}px 'Teko', sans-serif`;
-  let textW = ctx.measureText(text).width;
+  let textW = Math.max(...manualLines.map(line => ctx.measureText(line).width), 0);
   if (textW > maxTextW) {
     baseFontSize = Math.floor(baseFontSize * (maxTextW / textW));
     if (baseFontSize < 36) baseFontSize = 36;
@@ -1833,24 +1882,26 @@ function drawMainTitle(ctx, s) {
 
   const fontSize = Math.round(baseFontSize * (textScalePct / 100));
   ctx.font = `500 ${fontSize}px 'Teko', sans-serif`;
-  textW = ctx.measureText(text).width;
+  textW = Math.max(...manualLines.map(line => ctx.measureText(line).width), 0);
 
   const lines = [];
-  if (textW <= maxTextW) {
-    lines.push(text);
-  } else {
-    const words = text.split(' ');
-    let line = '';
-    for (const w of words) {
-      const test = line ? line + ' ' + w : w;
-      if (ctx.measureText(test).width > maxTextW && line) {
-        lines.push(line);
-        line = w;
-      } else {
-        line = test;
+  for (const manualLine of manualLines) {
+    if (ctx.measureText(manualLine).width <= maxTextW) {
+      lines.push(manualLine);
+    } else {
+      const words = manualLine.split(' ');
+      let line = '';
+      for (const w of words) {
+        const test = line ? line + ' ' + w : w;
+        if (ctx.measureText(test).width > maxTextW && line) {
+          lines.push(line);
+          line = w;
+        } else {
+          line = test;
+        }
       }
+      if (line) lines.push(line);
     }
-    if (line) lines.push(line);
   }
 
   const lineHeight = fontSize * 1.08;
@@ -1917,7 +1968,7 @@ function renderPW(ctx, s) {
 }
 
 function drawSubHeading(ctx, s) {
-  const text = (s.subHeading || '').trim();
+  const text = (s.subHeading || '').replace(/\r\n/g, '\n').trim();
   _lastSubTextBBox = null;
   if (!text) return;
 
@@ -1926,27 +1977,34 @@ function drawSubHeading(ctx, s) {
   const fill = isPWTemplate() ? (preset?.text || '#111827') : customSubHeadingColor;
   ctx.save();
   const maxTextW = W - 180;
+  const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
+  if (!lines.length) {
+    ctx.restore();
+    return;
+  }
   let baseFontSize = 38;
   ctx.font = `700 ${baseFontSize}px 'Poppins', sans-serif`;
-  let measured = ctx.measureText(text).width;
+  let measured = Math.max(...lines.map(line => ctx.measureText(line).width), 0);
   if (measured > maxTextW) {
     baseFontSize = Math.max(18, Math.floor(baseFontSize * (maxTextW / measured)));
   }
   const fontSize = Math.round(baseFontSize * (subTextScalePct / 100));
   ctx.font = `700 ${fontSize}px 'Poppins', sans-serif`;
-  measured = ctx.measureText(text).width;
+  measured = Math.max(...lines.map(line => ctx.measureText(line).width), 0);
+  const lineHeight = Math.round(fontSize * 1.18);
 
   const drawX = subHeadingAutoCentered ? (W - measured) / 2 : (subTextPosXPct / 100) * W;
   const drawY = (subTextPosYPct / 100) * H;
-  const metrics = ctx.measureText(text);
+  const metrics = ctx.measureText(lines[0]);
   const ascent = metrics.actualBoundingBoxAscent || fontSize * 0.8;
   const descent = metrics.actualBoundingBoxDescent || fontSize * 0.2;
+  const blockHeight = ((lines.length - 1) * lineHeight) + ascent + descent;
 
   _lastSubTextBBox = {
     x: drawX,
     y: drawY,
     w: measured,
-    h: ascent + descent
+    h: blockHeight
   };
 
   ctx.fillStyle = fill;
@@ -1957,7 +2015,9 @@ function drawSubHeading(ctx, s) {
   }
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
-  ctx.fillText(text, drawX, drawY);
+  lines.forEach((line, index) => {
+    ctx.fillText(line, drawX, drawY + (index * lineHeight));
+  });
   ctx.restore();
 }
 
