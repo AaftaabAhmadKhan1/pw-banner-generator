@@ -2135,6 +2135,11 @@ function toggleOverlay(type, checked) {
     if (checked && !document.getElementById('tagTextInput').value) {
       document.getElementById('tagTextInput').value = getAutoOverlayText();
     }
+    if (checked && document.fonts?.load) {
+      document.fonts.load("400 32px 'Poppins'").then(() => {
+        if (showInfoTag) render();
+      }).catch(() => {});
+    }
   }
   syncOverlayControlStates();
   render();
