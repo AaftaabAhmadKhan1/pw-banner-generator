@@ -57,6 +57,12 @@
       border-color:rgba(124, 92, 252, 0.55);
       box-shadow:0 16px 36px rgba(124, 92, 252, 0.24);
     }
+    .header-action:disabled {
+      opacity:0.45;
+      cursor:not-allowed;
+      transform:none;
+      box-shadow:none;
+    }
     .main-layout { display:grid; grid-template-columns:400px 1fr; height:calc(100vh - 57px); }
     .panel { background:var(--surface); border-right:1px solid var(--border); overflow-y:auto; padding:20px; }
     .panel::-webkit-scrollbar { width:6px; }
@@ -86,12 +92,22 @@
     .btn-download { background:linear-gradient(135deg,#4ade80,#22c55e); color:#000; width:100%; margin-top:8px; }
     .btn-download:hover { opacity:0.9; }
     .preview-area { display:flex; flex-direction:column; align-items:center; justify-content:center; background:#08080e; padding:30px; overflow:auto; }
-    .canvas-wrap { border-radius:8px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.5); max-width:100%; }
+    .canvas-wrap { position:relative; border-radius:8px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.5); max-width:100%; }
     #bannerCanvas { display:block; max-width:100%; height:auto; cursor:default; }
     .size-label { font-size:11px; color:var(--text-muted); margin-top:12px; }
     .feature-tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
     .feature-tag { background:var(--surface-3); border:1px solid var(--border); padding:3px 8px; border-radius:4px; font-size:11px; color:var(--text); display:flex; align-items:center; gap:4px; }
     .feature-tag .remove { cursor:pointer; color:var(--accent); font-weight:bold; }
+
+    /* Faculty small tag overlay (draggable) */
+    .faculty-tag-overlay { position: absolute; inset: 0; pointer-events: none; }
+    .faculty-small-tag {
+      position: absolute; pointer-events: auto; user-select: none; display:flex; align-items:center; justify-content:center;
+      padding:6px 14px; border-radius:18px; font-family: 'Poppins', sans-serif; font-weight:400; color: var(--tag-text, #fff);
+      background: var(--tag-fill, #3a3a39); border: 2px solid var(--tag-stroke, #fff); box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+      transform: translate(-50%, -50%); cursor:grab; white-space:nowrap; font-size:12px;
+    }
+    .faculty-small-tag:active { cursor:grabbing; }
     .add-feature-row { display:flex; gap:6px; }
     .add-feature-row input { flex:1; }
     .add-feature-row button { padding:8px 12px; background:var(--surface-3); border:1px solid var(--border); color:var(--text); border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; white-space:nowrap; }
@@ -115,9 +131,15 @@
     .faculty-card .fc-advanced-toggle { display:flex; align-items:center; justify-content:space-between; width:100%; padding:8px 10px; background:var(--surface-3); border:1px solid var(--border); color:var(--text); border-radius:6px; cursor:pointer; font-size:11px; font-weight:700; font-family:inherit; margin-top:2px; }
     .faculty-card .fc-advanced-toggle .arrow { transition:transform 0.2s ease; }
     .faculty-card .fc-advanced-toggle.open .arrow { transform:rotate(180deg); }
-    .faculty-upload-options { display:flex; gap:8px; margin-top:10px; }
+    .faculty-upload-options { display:flex; flex-direction:column; gap:8px; margin-top:10px; }
     .faculty-upload-options.hidden { display:none; }
-    .faculty-upload-options .fc-btn { flex:1; justify-content:center; }
+    .hidden { display:none !important; }
+    .faculty-upload-options .fc-btn { justify-content:center; }
+    .faculty-upload-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .faculty-upload-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .faculty-upload-panel { background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:10px; }
+    .faculty-upload-panel-title { font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px; }
+    .faculty-upload-stack { display:flex; flex-direction:column; gap:8px; }
     .overlay-toggle { display:flex; align-items:center; justify-content:space-between; width:100%; padding:8px 10px; background:var(--surface-3); border:1px solid var(--border); color:var(--text); border-radius:6px; cursor:pointer; font-size:11px; font-weight:700; font-family:inherit; margin-bottom:8px; }
     .overlay-toggle .arrow { transition:transform 0.2s ease; }
     .overlay-toggle.open .arrow { transform:rotate(180deg); }
@@ -179,6 +201,8 @@
     </div>
   </div>
   <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;">
+    <button class="header-action" type="button" id="undoBtn" onclick="undoAppState()">Undo</button>
+    <button class="header-action" type="button" id="redoBtn" onclick="redoAppState()">Redo</button>
     <a
       class="header-action"
       href="https://www.remove.bg/"
@@ -227,7 +251,11 @@
     <div class="form-group">
       <textarea id="batchName" rows="3" placeholder="Enter batch name" oninput="render()" style="min-height:72px;resize:vertical;"></textarea>
     </div>
-    <div class="fc-sliders" id="textSliders">
+    <button type="button" class="overlay-toggle" id="batchNameSettingsToggle" onclick="toggleBatchNameSettings()">
+      <span>Show Position & Size Settings</span>
+      <span class="arrow">&#9662;</span>
+    </button>
+    <div class="fc-sliders collapsed" id="textSliders">
       <label>Horizontal <span id="tlbl-posX">50%</span></label>
       <input type="range" min="0" max="100" step="1" value="50" id="textPosXSlider" oninput="onTextSlider('posX',this.value)" />
       <label>Vertical <span id="tlbl-posY">25%</span></label>
@@ -240,7 +268,11 @@
     <div class="form-group">
       <textarea id="subHeadingInput" rows="3" placeholder="Enter sub heading" oninput="onSubHeadingInput(this.value,'main')" style="min-height:72px;resize:vertical;"></textarea>
     </div>
-    <div class="fc-sliders" id="subTextSliders">
+    <button type="button" class="overlay-toggle" id="subHeadingSettingsToggle" onclick="toggleSubHeadingSettings()">
+      <span>Show Position & Size Settings</span>
+      <span class="arrow">&#9662;</span>
+    </button>
+    <div class="fc-sliders collapsed" id="subTextSliders">
       <label>Horizontal <span id="sublbl-posX">50%</span></label>
       <input type="range" min="0" max="100" step="1" value="50" id="subTextPosXSlider" oninput="onSubTextSlider('posX',this.value)" />
       <label>Vertical <span id="sublbl-posY">44%</span></label>
@@ -281,6 +313,13 @@
         <label style="margin-bottom:4px;font-size:11px;color:var(--text-muted);">Tag Text</label>
         <input type="text" id="tagTextInput" value="" oninput="render()" />
       </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label style="margin-bottom:8px;font-size:11px;color:var(--text-muted);display:block;">Faculty Set</label>
+        <div class="faculty-upload-row">
+          <button type="button" class="fc-btn" onclick="setTagFacultyMode('single')" id="tagFacultySingleBtn">1 Set of Faculty</button>
+          <button type="button" class="fc-btn" onclick="setTagFacultyMode('double')" id="tagFacultyDoubleBtn">2 Sets of Faculty</button>
+        </div>
+      </div>
       <button type="button" class="overlay-toggle" id="tagControlsToggle" onclick="toggleOverlayControls('tag')">
         <span>Show Size Control</span>
         <span class="arrow">&#9662;</span>
@@ -294,8 +333,37 @@
     <div class="section-title">Faculty Photos</div>
     <button class="btn-add-faculty" onclick="toggleFacultyUploadOptions()">+ Add Faculty Photo(s)</button>
     <div id="facultyUploadOptions" class="faculty-upload-options hidden">
-      <button type="button" class="fc-btn" onclick="addFaculty(1)">Upload To Bottom Row</button>
-      <button type="button" class="fc-btn" onclick="addFaculty(2)">Upload To Upper Row</button>
+      <div class="faculty-upload-row">
+        <button type="button" class="fc-btn" onclick="showFacultyUploadMode('single')">1 Set of Faculties</button>
+        <button type="button" class="fc-btn" onclick="showFacultyUploadMode('double')">2 Set of Faculties</button>
+      </div>
+      <div id="singleFacultyUploadPanel" class="faculty-upload-panel hidden">
+        <div class="faculty-upload-panel-title">1 Set of Faculties</div>
+        <div class="faculty-upload-stack">
+          <button type="button" class="fc-btn" onclick="addFaculty(1, 'center')">Upload To Bottom Row</button>
+          <button type="button" class="fc-btn" onclick="addFaculty(2, 'center')">Upload To Upper Row</button>
+        </div>
+      </div>
+      <div id="doubleFacultyUploadPanel" class="faculty-upload-panel hidden">
+        <div class="faculty-upload-grid">
+          <div class="faculty-upload-panel">
+            <div class="faculty-upload-panel-title">Left</div>
+            <div class="faculty-upload-stack">
+              <button type="button" class="fc-btn" onclick="addFaculty(1, 'left')">Upload To Bottom Row</button>
+              <button type="button" class="fc-btn" onclick="addFaculty(2, 'left')">Upload To Upper Row</button>
+              <input type="text" id="leftFacultyTag" placeholder="Left tag text" oninput="render()" />
+            </div>
+          </div>
+          <div class="faculty-upload-panel">
+            <div class="faculty-upload-panel-title">Right</div>
+            <div class="faculty-upload-stack">
+              <button type="button" class="fc-btn" onclick="addFaculty(1, 'right')">Upload To Bottom Row</button>
+              <button type="button" class="fc-btn" onclick="addFaculty(2, 'right')">Upload To Upper Row</button>
+              <input type="text" id="rightFacultyTag" placeholder="Right tag text" oninput="render()" />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     <div id="facultyList"></div>
     <input type="file" id="facultyFileInput" accept="image/*" multiple style="display:none" />
@@ -376,6 +444,7 @@
   <div class="preview-area">
     <div class="canvas-wrap">
       <canvas id="bannerCanvas" width="1312" height="656"></canvas>
+      <div id="facultyTagOverlay" class="faculty-tag-overlay" aria-hidden="true"></div>
     </div>
   </div>
 </div>
@@ -427,6 +496,96 @@ function getBgRemoveUrl(path) {
   return BG_REMOVE_API_URL.replace(/\/+$/, '') + path;
 }
 
+// ===== FACULTY SMALL TAGS (DOM overlay) =====
+function getFacultyOverlay() {
+  return document.getElementById('facultyTagOverlay');
+}
+
+function ensureFacultyTagEl(side) {
+  const container = getFacultyOverlay();
+  if (!container) return null;
+  const id = `faculty-tag-${side}`;
+  let el = document.getElementById(id);
+  if (!el) {
+    el = document.createElement('div');
+    el.id = id;
+    el.className = 'faculty-small-tag';
+    el.setAttribute('data-side', side);
+    el.style.left = '50%';
+    el.style.top = '90%';
+    container.appendChild(el);
+
+    let dragging = false;
+    let lastX = 0, lastY = 0;
+
+    el.addEventListener('pointerdown', (ev) => {
+      ev.preventDefault();
+      el.setPointerCapture(ev.pointerId);
+      dragging = true;
+      lastX = ev.clientX;
+      lastY = ev.clientY;
+      el.style.cursor = 'grabbing';
+    });
+
+    window.addEventListener('pointermove', (ev) => {
+      if (!dragging) return;
+      const rect = container.getBoundingClientRect();
+      const dx = ev.clientX - lastX;
+      const dy = ev.clientY - lastY;
+      lastX = ev.clientX; lastY = ev.clientY;
+      const curLeft = parseFloat(el.style.left || '50%');
+      const curTop = parseFloat(el.style.top || '90%');
+      // current values are percent strings sometimes; convert pixels delta to percent
+      const deltaXPct = (dx / rect.width) * 100;
+      const deltaYPct = (dy / rect.height) * 100;
+      const newX = Math.max(0, Math.min(100, (isNaN(curLeft) ? 50 : curLeft) + deltaXPct));
+      const newY = Math.max(0, Math.min(100, (isNaN(curTop) ? 90 : curTop) + deltaYPct));
+      el.style.left = newX + '%';
+      el.style.top = newY + '%';
+      const side = el.getAttribute('data-side');
+      if (side === 'left') leftFacultyTagPos = { xPct: newX, yPct: newY };
+      if (side === 'right') rightFacultyTagPos = { xPct: newX, yPct: newY };
+      render();
+    });
+
+    el.addEventListener('pointerup', (ev) => {
+      dragging = false;
+      el.releasePointerCapture(ev.pointerId);
+      el.style.cursor = 'grab';
+    });
+  }
+  return el;
+}
+
+function syncFacultyTagsDOM() {
+  const overlay = getFacultyOverlay();
+  if (!overlay) return;
+  // Clean up if not needed: only keep tags when Tag overlay is on AND mode is double
+  if (!showInfoTag || _tagFacultyMode !== 'double') {
+    const existing = overlay.querySelectorAll('.faculty-small-tag');
+    existing.forEach(n => n.remove());
+    return;
+  }
+
+  // Always show both small tags in double mode (text can come from left/right inputs or fallback)
+  {
+    const el = ensureFacultyTagEl('left');
+    const text = (document.getElementById('leftFacultyTag')?.value || document.getElementById('tagTextInput')?.value || '').trim();
+    el.textContent = text || 'Faculty';
+    el.style.left = (leftFacultyTagPos.xPct || 25) + '%';
+    el.style.top = (leftFacultyTagPos.yPct || 85) + '%';
+    el.style.fontSize = Math.max(10, Math.round(12 * Math.max(0.6, tagScalePct/100))) + 'px';
+  }
+  {
+    const el = ensureFacultyTagEl('right');
+    const text = (document.getElementById('rightFacultyTag')?.value || document.getElementById('tagTextInput')?.value || '').trim();
+    el.textContent = text || 'Faculty';
+    el.style.left = (rightFacultyTagPos.xPct || 75) + '%';
+    el.style.top = (rightFacultyTagPos.yPct || 85) + '%';
+    el.style.fontSize = Math.max(10, Math.round(12 * Math.max(0.6, tagScalePct/100))) + 'px';
+  }
+}
+
 // ===== CONSTANTS =====
 let W = 1312, H = 656;
 const BANNER_DIMENSIONS = {
@@ -472,6 +631,11 @@ let uploadedCustomTemplate = null;
 let _facId = 0;
 let _pendingFacultyId = null;
 let _pendingFacultyLine = 1;
+let _pendingFacultySide = 'center';
+let _facultyUploadMode = null;
+let _tagFacultyMode = 'single'; // 'single' or 'double' for Tag faculty display
+let batchNameSettingsOpen = false;
+let subHeadingSettingsOpen = false;
 
 // Crop state
 let cropFacultyId = null;
@@ -517,6 +681,16 @@ let tagControlsOpen = false;
 let customDetailsOpen = false;
 let customStyleOpen = false;
 let customSamplesOpen = false;
+let leftFacultyTagText = '';
+let rightFacultyTagText = '';
+// Positions for small faculty tags (percentages relative to canvas)
+let leftFacultyTagPos = { xPct: 25, yPct: 85 };
+let rightFacultyTagPos = { xPct: 75, yPct: 85 };
+
+let appHistory = [];
+let appFuture = [];
+let isRestoringHistory = false;
+let historyDebounceTimer = null;
 const TAG_LOCKED_POS_X = 50;
 const TAG_LOCKED_POS_Y = 100;
 
@@ -532,6 +706,8 @@ const FACULTY_LAYOUTS = {
 };
 
 const FACULTY_VISUAL_OVERLAP = 88;
+// Multiplier to enlarge faculty images when using two-set (double) layout
+const FACULTY_DOUBLE_SIZE_BOOST = 1.20;
 
 // Bounding box of the last rendered batch name text (for hit detection)
 let _lastTextBBox = null; // { x, y, w, h }
@@ -559,6 +735,8 @@ window.addEventListener('DOMContentLoaded', () => {
   initEraseEvents();
   initCanvasDrag();
   syncSubTextSliders();
+  bindHistoryListeners();
+  captureHistorySnapshot(true);
   Promise.allSettled([
     document.fonts.ready,
     document.fonts.load("500 34px 'Poppins'"),
@@ -601,6 +779,7 @@ function onBannerModeChange() {
   applyBannerDimensions();
   autoArrangeFaculty(true);
   render();
+  scheduleHistoryCapture();
 }
 
 function onCustomDimensionChange() {
@@ -608,6 +787,7 @@ function onCustomDimensionChange() {
   applyBannerDimensions();
   autoArrangeFaculty(true);
   render();
+  scheduleHistoryCapture();
 }
 
 function isPWTemplate() {
@@ -758,6 +938,94 @@ function toggleCustom() {
   }
 }
 
+function toggleBatchNameSettings() {
+  batchNameSettingsOpen = !batchNameSettingsOpen;
+  const section = document.getElementById('textSliders');
+  const toggle = document.getElementById('batchNameSettingsToggle');
+  if (section) section.classList.toggle('collapsed', !batchNameSettingsOpen);
+  if (toggle) {
+    toggle.classList.toggle('open', batchNameSettingsOpen);
+    const label = toggle.querySelector('span');
+    if (label) {
+      label.textContent = batchNameSettingsOpen
+        ? 'Hide Position & Size Settings'
+        : 'Show Position & Size Settings';
+    }
+  }
+}
+
+function toggleSubHeadingSettings() {
+  subHeadingSettingsOpen = !subHeadingSettingsOpen;
+  const section = document.getElementById('subTextSliders');
+  const toggle = document.getElementById('subHeadingSettingsToggle');
+  if (section) section.classList.toggle('collapsed', !subHeadingSettingsOpen);
+  if (toggle) {
+    toggle.classList.toggle('open', subHeadingSettingsOpen);
+    const label = toggle.querySelector('span');
+    if (label) {
+      label.textContent = subHeadingSettingsOpen
+        ? 'Hide Position & Size Settings'
+        : 'Show Position & Size Settings';
+    }
+  }
+}
+
+function setTagFacultyMode(mode) {
+  _tagFacultyMode = mode;
+  const singleBtn = document.getElementById('tagFacultySingleBtn');
+  const doubleBtn = document.getElementById('tagFacultyDoubleBtn');
+
+  if (singleBtn && doubleBtn) {
+    if (mode === 'single') {
+      singleBtn.style.background = 'var(--primary)';
+      singleBtn.style.color = 'white';
+      doubleBtn.style.background = '';
+      doubleBtn.style.color = '';
+    } else {
+      doubleBtn.style.background = 'var(--primary)';
+      doubleBtn.style.color = 'white';
+      singleBtn.style.background = '';
+      singleBtn.style.color = '';
+    }
+  }
+
+  // Redistribute faculty based on mode
+  if (mode === 'double') {
+    // Split center faculty to left and right sides
+    const centerFaculty = getFacultySide('center');
+    if (centerFaculty.length > 0) {
+      const halfPoint = Math.ceil(centerFaculty.length / 2);
+      centerFaculty.forEach((fac, index) => {
+        if (index < halfPoint) {
+          fac.side = 'left';
+        } else {
+          fac.side = 'right';
+        }
+      });
+      autoArrangeFaculty();
+      renderFacultyList();
+    }
+    // When switching to double mode, if tag overlay is active copy main tag text into left/right fields
+    if (showInfoTag) {
+      const main = (document.getElementById('tagTextInput')?.value || getAutoOverlayText()).trim();
+      const left = document.getElementById('leftFacultyTag');
+      const right = document.getElementById('rightFacultyTag');
+      if (left && !left.value) left.value = main;
+      if (right && !right.value) right.value = main;
+      try { syncFacultyTagsDOM(); } catch (e) {}
+    }
+  } else {
+    // Move all faculty back to center
+    facultyPhotos.forEach(fac => {
+      fac.side = 'center';
+    });
+    autoArrangeFaculty();
+    renderFacultyList();
+  }
+
+  render(); // Re-render to show the faculty layout change
+}
+
 function getState() {
   return {
     batchName: document.getElementById('batchName').value,
@@ -784,9 +1052,272 @@ function getState() {
   };
 }
 
+function snapshotFacultyPhoto(f) {
+  return {
+    id: f.id,
+    name: f.name,
+    originalDataUrl: f.originalDataUrl,
+    displayDataUrl: f.displayDataUrl,
+    posX: f.posX,
+    posY: f.posY,
+    scale: f.scale,
+    cropX: f.cropX,
+    cropY: f.cropY,
+    cropW: f.cropW,
+    cropH: f.cropH,
+    bgRemoved: f.bgRemoved,
+    brightness: f.brightness,
+    baseWidth: f.baseWidth,
+    controlsOpen: f.controlsOpen,
+    positionLocked: f.positionLocked,
+    line: f.line,
+    side: f.side,
+    groupCount: f.groupCount || 1,
+  };
+}
+
+function serializeAppState() {
+  return {
+    bannerMode,
+    currentTemplate,
+    customWidth: document.getElementById('customWidth').value,
+    customHeight: document.getElementById('customHeight').value,
+    batchName: document.getElementById('batchName').value,
+    subHeadingInput: document.getElementById('subHeadingInput').value,
+    batchYear: document.getElementById('batchYear').value,
+    batchClass: document.getElementById('batchClass').value,
+    examTarget: document.getElementById('examTarget').value,
+    stream: document.getElementById('stream').value,
+    tagline: document.getElementById('tagline').value,
+    customSubHeadingInput: document.getElementById('customSubHeadingInput').value,
+    language: document.getElementById('language').value,
+    originalPrice: document.getElementById('originalPrice').value,
+    discountPrice: document.getElementById('discountPrice').value,
+    badgeText: document.getElementById('badgeText').value,
+    validity: document.getElementById('validity').value,
+    teachers: document.getElementById('teachers').value,
+    colorPrimary: document.getElementById('colorPrimary').value,
+    colorSecondary: document.getElementById('colorSecondary').value,
+    colorAccent: document.getElementById('colorAccent').value,
+    logoText: document.getElementById('logoText').value,
+    boxTextInput: document.getElementById('boxTextInput').value,
+    tagTextInput: document.getElementById('tagTextInput').value,
+    leftFacultyTag: document.getElementById('leftFacultyTag').value,
+    rightFacultyTag: document.getElementById('rightFacultyTag').value,
+    customBoxFillColor: document.getElementById('customBoxFillColor').value,
+    customTitleColor: document.getElementById('customTitleColor').value,
+    customSubHeadingColor: document.getElementById('customSubHeadingColor').value,
+    features: [...features],
+    facultyPhotos: facultyPhotos.map(snapshotFacultyPhoto),
+    uploadedCustomTemplate: uploadedCustomTemplate ? {
+      id: uploadedCustomTemplate.id,
+      name: uploadedCustomTemplate.name,
+      colors: uploadedCustomTemplate.colors,
+      renderer: uploadedCustomTemplate.renderer,
+      preview: uploadedCustomTemplate.preview,
+      imageSrc: uploadedCustomTemplate.imageSrc,
+    } : null,
+    showInfoBox,
+    showInfoTag,
+    boxPosXPct,
+    boxPosYPct,
+    boxScalePct,
+    tagPosXPct,
+    tagPosYPct,
+    tagScalePct,
+    textPosXPct,
+    textPosYPct,
+    textScalePct,
+    subTextPosXPct,
+    subTextPosYPct,
+    subTextScalePct,
+    titleAutoCentered,
+    subHeadingAutoCentered,
+    boxControlsOpen,
+    tagControlsOpen,
+    customDetailsOpen,
+    customStyleOpen,
+    customSamplesOpen,
+    showCustomBadgeBox,
+    showCustomPriceBox,
+    showCustomHeroBox,
+    showCustomFooterBox,
+    showCustomMetaBox,
+    showCustomMeta1Box,
+    showCustomMeta2Box,
+    customBoxPositions: JSON.parse(JSON.stringify(customBoxPositions)),
+    pendingFacultyLine: _pendingFacultyLine,
+    pendingFacultySide: _pendingFacultySide,
+    facultyUploadMode: _facultyUploadMode,
+    showFacultyUploadOptions: !document.getElementById('facultyUploadOptions').classList.contains('hidden'),
+  };
+}
+
+function hydrateUploadedTemplate(snapshot) {
+  if (!snapshot) {
+    uploadedCustomTemplate = null;
+    return;
+  }
+  const img = new Image();
+  uploadedCustomTemplate = {
+    ...snapshot,
+    imageObj: img,
+  };
+  img.onload = () => render();
+  img.src = snapshot.imageSrc || snapshot.preview;
+}
+
+function restoreAppState(snapshot) {
+  if (!snapshot) return;
+  isRestoringHistory = true;
+  try {
+    bannerMode = snapshot.bannerMode || 'pw';
+    currentTemplate = snapshot.currentTemplate || 'pw_1';
+    document.getElementById('bannerMode').value = bannerMode;
+    document.getElementById('customWidth').value = snapshot.customWidth || '1312';
+    document.getElementById('customHeight').value = snapshot.customHeight || '656';
+    document.getElementById('batchName').value = snapshot.batchName || '';
+    document.getElementById('subHeadingInput').value = snapshot.subHeadingInput || '';
+    document.getElementById('batchYear').value = snapshot.batchYear || '';
+    document.getElementById('batchClass').value = snapshot.batchClass || document.getElementById('batchClass').value;
+    document.getElementById('examTarget').value = snapshot.examTarget || document.getElementById('examTarget').value;
+    document.getElementById('stream').value = snapshot.stream || document.getElementById('stream').value;
+    document.getElementById('tagline').value = snapshot.tagline || '';
+    document.getElementById('customSubHeadingInput').value = snapshot.customSubHeadingInput || '';
+    document.getElementById('language').value = snapshot.language || document.getElementById('language').value;
+    document.getElementById('originalPrice').value = snapshot.originalPrice || '';
+    document.getElementById('discountPrice').value = snapshot.discountPrice || '';
+    document.getElementById('badgeText').value = snapshot.badgeText || '';
+    document.getElementById('validity').value = snapshot.validity || '';
+    document.getElementById('teachers').value = snapshot.teachers || '';
+    document.getElementById('colorPrimary').value = snapshot.colorPrimary || '#7c3aed';
+    document.getElementById('colorSecondary').value = snapshot.colorSecondary || '#ec4899';
+    document.getElementById('colorAccent').value = snapshot.colorAccent || '#f59e0b';
+    document.getElementById('logoText').value = snapshot.logoText || '';
+    document.getElementById('boxTextInput').value = snapshot.boxTextInput || '';
+    document.getElementById('tagTextInput').value = snapshot.tagTextInput || '';
+    document.getElementById('leftFacultyTag').value = snapshot.leftFacultyTag || '';
+    document.getElementById('rightFacultyTag').value = snapshot.rightFacultyTag || '';
+    document.getElementById('customBoxFillColor').value = snapshot.customBoxFillColor || '#9260a8';
+    document.getElementById('customTitleColor').value = snapshot.customTitleColor || '#ffffff';
+    document.getElementById('customSubHeadingColor').value = snapshot.customSubHeadingColor || '#ffffff';
+    features = [...(snapshot.features || [])];
+    facultyPhotos = (snapshot.facultyPhotos || []).map((f) => ({ ...f, imageObj: null, bgRemoving: false }));
+    _facId = facultyPhotos.reduce((max, f) => Math.max(max, f.id || 0), 0);
+    facultyPhotos.forEach(loadFacultyImage);
+    hydrateUploadedTemplate(snapshot.uploadedCustomTemplate || null);
+    showInfoBox = !!snapshot.showInfoBox;
+    showInfoTag = !!snapshot.showInfoTag;
+    boxPosXPct = snapshot.boxPosXPct ?? 21;
+    boxPosYPct = snapshot.boxPosYPct ?? 68;
+    boxScalePct = snapshot.boxScalePct ?? 100;
+    tagPosXPct = snapshot.tagPosXPct ?? TAG_LOCKED_POS_X;
+    tagPosYPct = snapshot.tagPosYPct ?? TAG_LOCKED_POS_Y;
+    tagScalePct = snapshot.tagScalePct ?? 100;
+    textPosXPct = snapshot.textPosXPct ?? 50;
+    textPosYPct = snapshot.textPosYPct ?? 25;
+    textScalePct = snapshot.textScalePct ?? 100;
+    subTextPosXPct = snapshot.subTextPosXPct ?? 50;
+    subTextPosYPct = snapshot.subTextPosYPct ?? 44;
+    subTextScalePct = snapshot.subTextScalePct ?? 100;
+    titleAutoCentered = snapshot.titleAutoCentered ?? true;
+    subHeadingAutoCentered = snapshot.subHeadingAutoCentered ?? true;
+    boxControlsOpen = !!snapshot.boxControlsOpen;
+    tagControlsOpen = !!snapshot.tagControlsOpen;
+    customDetailsOpen = !!snapshot.customDetailsOpen;
+    customStyleOpen = !!snapshot.customStyleOpen;
+    customSamplesOpen = !!snapshot.customSamplesOpen;
+    showCustomBadgeBox = snapshot.showCustomBadgeBox ?? true;
+    showCustomPriceBox = snapshot.showCustomPriceBox ?? true;
+    showCustomHeroBox = snapshot.showCustomHeroBox ?? true;
+    showCustomFooterBox = snapshot.showCustomFooterBox ?? true;
+    showCustomMetaBox = snapshot.showCustomMetaBox ?? true;
+    showCustomMeta1Box = snapshot.showCustomMeta1Box ?? true;
+    showCustomMeta2Box = snapshot.showCustomMeta2Box ?? true;
+    customBoxPositions = snapshot.customBoxPositions || {};
+    _pendingFacultyLine = snapshot.pendingFacultyLine || 1;
+    _pendingFacultySide = snapshot.pendingFacultySide || 'center';
+    _facultyUploadMode = snapshot.facultyUploadMode || null;
+
+    applyBannerDimensions();
+    buildPWTemplateGrid();
+    buildCustomTemplateGrid();
+    renderFeatureTags();
+    renderFacultyList();
+    document.getElementById('showBoxCheck').checked = showInfoBox;
+    document.getElementById('showTagCheck').checked = showInfoTag;
+    document.getElementById('boxControls').style.display = showInfoBox ? 'block' : 'none';
+    document.getElementById('tagControls').style.display = showInfoTag ? 'block' : 'none';
+    const uploadOptions = document.getElementById('facultyUploadOptions');
+    uploadOptions.classList.toggle('hidden', !snapshot.showFacultyUploadOptions);
+    showFacultyUploadMode(_facultyUploadMode || 'single');
+    if (!_facultyUploadMode) {
+      document.getElementById('singleFacultyUploadPanel').classList.add('hidden');
+      document.getElementById('doubleFacultyUploadPanel').classList.add('hidden');
+    }
+    syncOverlayControlStates();
+    updateHistoryButtons();
+    render();
+  } finally {
+    isRestoringHistory = false;
+  }
+}
+
+function captureHistorySnapshot(force = false) {
+  if (isRestoringHistory) return;
+  const snapshot = serializeAppState();
+  const serialized = JSON.stringify(snapshot);
+  const lastSerialized = appHistory.length ? JSON.stringify(appHistory[appHistory.length - 1]) : null;
+  if (!force && serialized === lastSerialized) return;
+  appHistory.push(snapshot);
+  if (appHistory.length > 80) appHistory.shift();
+  appFuture = [];
+  updateHistoryButtons();
+}
+
+function scheduleHistoryCapture() {
+  if (isRestoringHistory) return;
+  clearTimeout(historyDebounceTimer);
+  historyDebounceTimer = setTimeout(() => captureHistorySnapshot(false), 180);
+}
+
+function updateHistoryButtons() {
+  const undoBtn = document.getElementById('undoBtn');
+  const redoBtn = document.getElementById('redoBtn');
+  if (undoBtn) undoBtn.disabled = appHistory.length <= 1;
+  if (redoBtn) redoBtn.disabled = appFuture.length === 0;
+}
+
+function undoAppState() {
+  if (appHistory.length <= 1) return;
+  const current = appHistory.pop();
+  appFuture.push(current);
+  restoreAppState(appHistory[appHistory.length - 1]);
+  updateHistoryButtons();
+}
+
+function redoAppState() {
+  if (!appFuture.length) return;
+  const snapshot = appFuture.pop();
+  appHistory.push(snapshot);
+  restoreAppState(snapshot);
+  updateHistoryButtons();
+}
+
+function bindHistoryListeners() {
+  document.querySelector('.panel').addEventListener('input', (event) => {
+    if (event.target.closest('#cropOverlay, #eraseOverlay')) return;
+    scheduleHistoryCapture();
+  });
+  document.querySelector('.panel').addEventListener('change', (event) => {
+    if (event.target.closest('#cropOverlay, #eraseOverlay')) return;
+    scheduleHistoryCapture();
+  });
+}
+
 // ===== FEATURES =====
-function addFeature() { const i=document.getElementById('featureInput'); const v=i.value.trim(); if(!v)return; features.push(v); i.value=''; renderFeatureTags(); render(); }
-function removeFeature(i) { features.splice(i,1); renderFeatureTags(); render(); }
+function addFeature() { const i=document.getElementById('featureInput'); const v=i.value.trim(); if(!v)return; features.push(v); i.value=''; renderFeatureTags(); render(); scheduleHistoryCapture(); }
+function removeFeature(i) { features.splice(i,1); renderFeatureTags(); render(); scheduleHistoryCapture(); }
 function renderFeatureTags() { document.getElementById('featureTags').innerHTML=features.map((f,i)=>`<div class="feature-tag">${f} <span class="remove" onclick="removeFeature(${i})">&times;</span></div>`).join(''); }
 
 // ===== PW TEMPLATE GRID =====
@@ -802,6 +1333,7 @@ function selectPWTemplate(id) {
   buildPWTemplateGrid();
   buildCustomTemplateGrid();
   render();
+  scheduleHistoryCapture();
 }
 
 // ===== CUSTOM TEMPLATE GRID =====
@@ -828,6 +1360,7 @@ function selectCustomTemplate(id) {
   buildPWTemplateGrid();
   buildCustomTemplateGrid();
   render();
+  scheduleHistoryCapture();
 }
 
 function getCurrentCustomTemplate() {
@@ -938,31 +1471,54 @@ function getFacultyLine(line) {
   return facultyPhotos.filter(f => (f.line || 1) === line);
 }
 
+function getFacultySide(side = 'center') {
+  return facultyPhotos.filter(f => (f.side || 'center') === side);
+}
+
+function getFacultyGroup(line = 1, side = 'center') {
+  return facultyPhotos.filter(f => (f.line || 1) === line && (f.side || 'center') === side);
+}
+
+function showFacultyUploadMode(mode) {
+  _facultyUploadMode = mode;
+  const singlePanel = document.getElementById('singleFacultyUploadPanel');
+  const doublePanel = document.getElementById('doubleFacultyUploadPanel');
+  if (singlePanel) singlePanel.classList.toggle('hidden', mode !== 'single');
+  if (doublePanel) doublePanel.classList.toggle('hidden', mode !== 'double');
+}
+
 function toggleFacultyUploadOptions() {
   const options = document.getElementById('facultyUploadOptions');
   if (!options) return;
+  const willOpen = options.classList.contains('hidden');
   options.classList.toggle('hidden');
+  if (willOpen) {
+    _facultyUploadMode = null;
+    const singlePanel = document.getElementById('singleFacultyUploadPanel');
+    const doublePanel = document.getElementById('doubleFacultyUploadPanel');
+    if (singlePanel) singlePanel.classList.add('hidden');
+    if (doublePanel) doublePanel.classList.add('hidden');
+  }
 }
 
-function addFaculty(line = 1) {
+function addFaculty(line = 1, side = 'center') {
   if (line === 2) {
-    const line1Count = getFacultyLine(1).length;
-    const line2Count = getFacultyLine(2).length;
+    const line1Count = getFacultyGroup(1, side).length;
+    const line2Count = getFacultyGroup(2, side).length;
     if (line1Count < 2) {
-      alert('Add at least 2 faculty photos in Line 1 before uploading to Line 2.');
+      alert('Add at least 2 faculty photos in the bottom row before uploading to the upper row.');
       return;
     }
     if (line2Count >= line1Count - 1) {
-      alert(`Line 2 can hold up to ${line1Count - 1} faculty photo(s) for the current Line 1 layout.`);
+      alert(`The upper row can hold up to ${line1Count - 1} faculty photo(s) for this ${side === 'center' ? 'set' : side + ' side'} layout.`);
       return;
     }
   }
 
   _pendingFacultyLine = line;
+  _pendingFacultySide = side;
   _pendingFacultyId = null;
   document.getElementById('facultyFileInput').removeAttribute('data-replace-mode');
-  const options = document.getElementById('facultyUploadOptions');
-  if (options) options.classList.add('hidden');
   document.getElementById('facultyFileInput').click();
 }
 
@@ -989,6 +1545,8 @@ function onFacultyFileSelected(e) {
       _pendingFacultyId = null;
       _pendingFacultyLine = 1;
       renderFacultyList();
+      render();
+      scheduleHistoryCapture();
     };
     reader.readAsDataURL(file);
     return;
@@ -996,15 +1554,17 @@ function onFacultyFileSelected(e) {
 
   let pendingReads = files.length;
   const targetLine = _pendingFacultyLine || 1;
+  const targetSide = _pendingFacultySide || 'center';
   if (!isReplaceMode && targetLine === 2) {
-    const availableSlots = Math.max(0, getFacultyLine(1).length - 1 - getFacultyLine(2).length);
+    const availableSlots = Math.max(0, getFacultyGroup(1, targetSide).length - 1 - getFacultyGroup(2, targetSide).length);
     if (availableSlots <= 0) {
       _pendingFacultyLine = 1;
-      alert('Line 2 is full for the current Line 1 layout.');
+      _pendingFacultySide = 'center';
+      alert('The upper row is full for the current bottom-row layout.');
       return;
     }
     if (files.length > availableSlots) {
-      alert(`Only ${availableSlots} faculty photo(s) can be added to Line 2 right now. The remaining files were skipped.`);
+      alert(`Only ${availableSlots} faculty photo(s) can be added to the upper row right now. The remaining files were skipped.`);
       files = files.slice(0, availableSlots);
       pendingReads = files.length;
     }
@@ -1030,14 +1590,18 @@ function onFacultyFileSelected(e) {
         controlsOpen: false,
         positionLocked: false,
         line: targetLine,
+        side: targetSide,
+        groupCount: 1,
       };
       facultyPhotos.push(fac);
       loadFacultyImage(fac);
       pendingReads -= 1;
       if (pendingReads === 0) {
         _pendingFacultyLine = 1;
+        _pendingFacultySide = 'center';
         autoArrangeFaculty();
         renderFacultyList();
+        scheduleHistoryCapture();
       }
     };
     reader.readAsDataURL(file);
@@ -1045,39 +1609,80 @@ function onFacultyFileSelected(e) {
 }
 
 function autoArrangeFaculty(preserveAdjustments = false) {
-  const line1 = getFacultyLine(1);
-  const line2 = getFacultyLine(2);
-  const layoutCount = Math.max(1, line1.length || facultyPhotos.length);
-  const layout = getFacultyStripLayout(layoutCount);
-  const line1Step = layoutCount === 1 ? layout.itemWidth : (layout.stripWidth - layout.itemWidth) / (layoutCount - 1);
-  const line1Centers = Array.from({ length: layoutCount }, (_, i) => layout.leftMargin + (layout.itemWidth / 2) + i * line1Step);
-  const line2Centers = line1Centers.length > 1
-    ? line1Centers.slice(0, -1).map((center, i) => (center + line1Centers[i + 1]) / 2)
-    : line1Centers;
+  const centerBottom = getFacultyGroup(1, 'center');
+  const centerUpper = getFacultyGroup(2, 'center');
+  const hasTwoSideLayout = getFacultySide('left').length > 0 || getFacultySide('right').length > 0;
 
-  line1.forEach((fac, index) => {
-    const centerX = line1Centers[Math.min(index, line1Centers.length - 1)];
-    if (!(preserveAdjustments && fac.positionLocked)) {
-      fac.posX = (centerX / W) * 100;
-      if (!preserveAdjustments) {
-        fac.posY = 0;
-        fac.scale = 100;
-      }
-      fac.baseWidth = layout.itemWidth;
-    }
-  });
+  const arrangeGroup = (side) => {
+    const line1 = getFacultyGroup(1, side);
+    const line2 = getFacultyGroup(2, side);
+    if (!line1.length && !line2.length) return;
 
-  line2.forEach((fac, index) => {
-    const centerX = line2Centers[Math.min(index, line2Centers.length - 1)] ?? line1Centers[Math.min(index, line1Centers.length - 1)];
-    if (!(preserveAdjustments && fac.positionLocked)) {
-      fac.posX = (centerX / W) * 100;
-      if (!preserveAdjustments) {
-        fac.posY = -14;
-        fac.scale = 100;
-      }
-      fac.baseWidth = layout.itemWidth;
+    const layoutCount = Math.max(1, line1.length || line2.length);
+    const layout = getFacultyStripLayout(layoutCount);
+    let itemWidth = layout.itemWidth;
+    let stripWidth = layout.stripWidth;
+    let leftEdge = layout.leftMargin;
+
+    if (side === 'left' || side === 'right') {
+      const halfCanvas = W / 2;
+      const groupWidth = Math.min(stripWidth * 0.6, halfCanvas - 24);
+      // Use the global double-size boost for side item width when in double mode
+      const sideWidthFactor = (typeof _tagFacultyMode !== 'undefined' && _tagFacultyMode === 'double') ? FACULTY_DOUBLE_SIZE_BOOST : 0.9;
+      itemWidth = Math.min(itemWidth * sideWidthFactor, layoutCount > 0 ? groupWidth / layoutCount : itemWidth);
+      stripWidth = layoutCount === 1 ? itemWidth : Math.max(groupWidth, itemWidth * layoutCount);
+      const centerX = side === 'left' ? W * 0.25 : W * 0.75;
+      leftEdge = centerX - stripWidth / 2;
     }
-  });
+
+    const line1Step = layoutCount === 1 ? itemWidth : (stripWidth - itemWidth) / (layoutCount - 1);
+    const line1Centers = Array.from({ length: layoutCount }, (_, i) => leftEdge + (itemWidth / 2) + i * line1Step);
+    const line2Centers = line1Centers.length > 1
+      ? line1Centers.slice(0, -1).map((center, i) => (center + line1Centers[i + 1]) / 2)
+      : line1Centers;
+
+    line1.forEach((fac, index) => {
+      const centerX = line1Centers[Math.min(index, line1Centers.length - 1)];
+      fac.groupCount = layoutCount;
+      if (!(preserveAdjustments && fac.positionLocked)) {
+        fac.posX = (centerX / W) * 100;
+        if (!preserveAdjustments) {
+          fac.posY = 0;
+          // enlarge scale when using double mode
+          fac.scale = (typeof _tagFacultyMode !== 'undefined' && _tagFacultyMode === 'double') ? Math.round(100 * FACULTY_DOUBLE_SIZE_BOOST) : 100;
+        }
+        fac.baseWidth = itemWidth;
+      }
+    });
+
+    line2.forEach((fac, index) => {
+      const centerX = line2Centers[Math.min(index, line2Centers.length - 1)] ?? line1Centers[Math.min(index, line1Centers.length - 1)];
+      fac.groupCount = layoutCount;
+      if (!(preserveAdjustments && fac.positionLocked)) {
+        fac.posX = (centerX / W) * 100;
+        if (!preserveAdjustments) {
+          fac.posY = side === 'center' ? -14 : -10;
+          // enlarge scale when using double mode
+          fac.scale = (typeof _tagFacultyMode !== 'undefined' && _tagFacultyMode === 'double') ? Math.round(100 * FACULTY_DOUBLE_SIZE_BOOST) : 100;
+        }
+        fac.baseWidth = itemWidth;
+      }
+    });
+  };
+
+  if (!hasTwoSideLayout) {
+    arrangeGroup('center');
+    return;
+  }
+
+  if (centerBottom.length) {
+    centerBottom.forEach((fac) => { fac.side = 'left'; });
+  }
+  if (centerUpper.length) {
+    centerUpper.forEach((fac) => { fac.side = 'left'; });
+  }
+  arrangeGroup('left');
+  arrangeGroup('right');
 }
 
 function loadFacultyImage(fac) {
@@ -1091,6 +1696,7 @@ function removeFaculty(id) {
   autoArrangeFaculty();
   renderFacultyList();
   render();
+  scheduleHistoryCapture();
 }
 
 function replaceFacultyPhoto(id) {
@@ -1188,6 +1794,7 @@ function onFacultyCardDragOver(id, event) {
   const targetFaculty = facultyPhotos.find(f => f.id === id);
   if (!sourceFaculty || !targetFaculty) return;
   if ((sourceFaculty.line || 1) !== (targetFaculty.line || 1)) return;
+  if ((sourceFaculty.side || 'center') !== (targetFaculty.side || 'center')) return;
   event.preventDefault();
   event.dataTransfer.dropEffect = 'move';
   event.currentTarget.classList.add('drag-target');
@@ -1208,11 +1815,13 @@ function onFacultyCardDrop(targetId, event) {
   const sourceFaculty = facultyPhotos[sourceIndex];
   const targetFaculty = facultyPhotos[targetIndex];
   if ((sourceFaculty.line || 1) !== (targetFaculty.line || 1)) return;
+  if ((sourceFaculty.side || 'center') !== (targetFaculty.side || 'center')) return;
   const [item] = facultyPhotos.splice(sourceIndex, 1);
   facultyPhotos.splice(targetIndex, 0, item);
   autoArrangeFaculty(true);
   renderFacultyList();
   render();
+  scheduleHistoryCapture();
 }
 
 function lockFacultyCardDrag(event) {
@@ -1257,15 +1866,7 @@ function renderFacultyList() {
         <span class="fc-drag-handle">Drag To Reorder</span>
       </div>
       <div class="fc-actions">
-        ${LIVE_BG_REMOVAL_DISABLED ? '' : `
-        <button class="fc-btn ${f.bgRemoving ? 'loading' : ''} ${f.bgRemoved ? 'done' : ''}" onclick="removeFacultyBg(${f.id})">
-          ${f.bgRemoving ? 'Removing...' : f.bgRemoved ? '\u2713 BG Removed' : 'Remove BG'}
-        </button>
-        `}
         <button class="fc-btn" onclick="openCrop(${f.id})">Crop</button>
-        ${LIVE_BG_REMOVAL_DISABLED ? '' : `
-        <button class="fc-btn" onclick="openErase(${f.id})">Erase</button>
-        `}
         <button class="fc-btn" onclick="replaceFacultyPhoto(${f.id})">Replace</button>
         <button class="fc-btn ${f.positionLocked ? 'done' : ''}" onclick="toggleFacultyPositionLock(${f.id})" title="${f.positionLocked ? 'Unlock Position' : 'Lock Position'}" aria-label="${f.positionLocked ? 'Unlock Position' : 'Lock Position'}">${f.positionLocked ? '&#128274;' : '&#128275;'}</button>
       </div>
@@ -1366,6 +1967,7 @@ function applyCrop() {
   if (fac.cropW < 0.01 || fac.cropH < 0.01) { fac.cropX=0; fac.cropY=0; fac.cropW=1; fac.cropH=1; }
   closeCrop();
   render();
+  scheduleHistoryCapture();
 }
 
 function resetCrop() {
@@ -1905,12 +2507,14 @@ function getFacultyDrawRect(fac, index, totalCount) {
   const sh = fac.cropH * img.naturalHeight;
   if (sw < 1 || sh < 1) return null;
 
-  const layout = getFacultyStripLayout(totalCount);
+  const layout = getFacultyStripLayout(fac.groupCount || totalCount);
   const baseWidth = fac.baseWidth || layout.itemWidth;
   const centerX = (fac.posX / 100) * W;
   const aspect = sw / sh;
-  const overlapBoost = totalCount > 1 ? FACULTY_VISUAL_OVERLAP : 0;
-  const destW = (baseWidth + overlapBoost) * ((fac.scale || 100) / 100);
+  const overlapBoost = (fac.groupCount || totalCount) > 1 ? FACULTY_VISUAL_OVERLAP : 0;
+  // Slightly enlarge faculty images when in two-set (double) faculty mode
+  const doubleModeSizeBoost = (typeof _tagFacultyMode !== 'undefined' && _tagFacultyMode === 'double') ? FACULTY_DOUBLE_SIZE_BOOST : 1.0;
+  const destW = (baseWidth + overlapBoost) * ((fac.scale || 100) / 100) * doubleModeSizeBoost;
   const destH = destW / aspect;
   const bottomShift = (fac.posY / 100) * H;
   const destX = centerX - destW / 2;
@@ -1933,6 +2537,62 @@ function drawFacultyPhotos(ctx, s) {
     ctx.drawImage(fac.imageObj, rect.sx, rect.sy, rect.sw, rect.sh, rect.destX, rect.destY, rect.destW, rect.destH);
     ctx.restore();
   }
+}
+
+function drawFacultySetTags(ctx) {
+  if (!showInfoTag) return;
+  if (_tagFacultyMode === 'double') return; // double mode uses DOM small tags instead of canvas-drawn tags
+  const leftCount = getFacultySide('left').length;
+  const rightCount = getFacultySide('right').length;
+  if (!leftCount && !rightCount) return;
+
+  const leftText = (document.getElementById('leftFacultyTag')?.value || '').trim();
+  const rightText = (document.getElementById('rightFacultyTag')?.value || '').trim();
+
+  const drawTag = (text, centerX) => {
+    if (!text) return;
+    ctx.save();
+    const scale = Math.max(0.42, tagScalePct / 100);
+    const fontSize = Math.round(32 * scale);
+    ctx.font = `400 ${fontSize}px 'Poppins', sans-serif`;
+    const textWidth = ctx.measureText(text).width;
+    const tagW = Math.max(textWidth + 108 * scale, 280 * scale);
+    const visibleHeight = 129 * scale;
+    const fullHeight = visibleHeight * 2;
+    const x = centerX - tagW / 2;
+    const y = H - visibleHeight - 12;
+    const radius = fullHeight * 0.34;
+
+    ctx.shadowColor = 'rgba(0,0,0,0.18)';
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetY = 1;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x - 8, y - 8, tagW + 16, visibleHeight + 16);
+    ctx.clip();
+    drawRoundedRect(ctx, x, y, tagW, fullHeight, radius);
+    ctx.fillStyle = TAG_STYLE.fill;
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
+    drawRoundedRect(ctx, x, y, tagW, fullHeight, radius);
+    ctx.strokeStyle = TAG_STYLE.stroke;
+    ctx.lineWidth = 8 * scale;
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.fillStyle = TAG_STYLE.text;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    const metrics = ctx.measureText(text);
+    const ascent = metrics.actualBoundingBoxAscent || fontSize * 0.72;
+    const descent = metrics.actualBoundingBoxDescent || fontSize * 0.18;
+    const baselineY = y + (visibleHeight / 2) + ((ascent - descent) / 2) - (24 * scale);
+    ctx.fillText(text, centerX, baselineY);
+    ctx.restore();
+  };
+
+  if (leftCount) drawTag(leftText, W * 0.25);
+  if (rightCount) drawTag(rightText, W * 0.75);
 }
 
 // ===== PW BANNER RENDERER =====
@@ -2272,6 +2932,15 @@ function toggleOverlay(type, checked) {
     if (checked && !document.getElementById('tagTextInput').value) {
       document.getElementById('tagTextInput').value = getAutoOverlayText();
     }
+    // If double faculty mode is active, auto-fill left/right small tags from the main tag text
+    if (checked && _tagFacultyMode === 'double') {
+      const main = (document.getElementById('tagTextInput')?.value || getAutoOverlayText()).trim();
+      const left = document.getElementById('leftFacultyTag');
+      const right = document.getElementById('rightFacultyTag');
+      if (left && !left.value) left.value = main;
+      if (right && !right.value) right.value = main;
+      try { syncFacultyTagsDOM(); } catch (e) {}
+    }
     if (checked && document.fonts?.load) {
       document.fonts.load("400 32px 'Poppins'").then(() => {
         if (showInfoTag) render();
@@ -2280,6 +2949,7 @@ function toggleOverlay(type, checked) {
   }
   syncOverlayControlStates();
   render();
+  scheduleHistoryCapture();
 }
 
 function onBoxSlider(field, value) {
@@ -2348,6 +3018,7 @@ function drawBoxOverlay(ctx) {
 // Draw Tag: compact dark rounded rectangle with thin border (matches tag sample)
 function drawTagOverlay(ctx) {
   if (!showInfoTag) return;
+  if (getFacultySide('left').length || getFacultySide('right').length) return;
   tagPosXPct = TAG_LOCKED_POS_X;
   tagPosYPct = TAG_LOCKED_POS_Y;
   const text = (document.getElementById('tagTextInput') && document.getElementById('tagTextInput').value) || getAutoOverlayText();
@@ -2427,9 +3098,12 @@ function render() {
     drawFacultyPhotos(ctx, s);
     drawMainTitle(ctx, s);
   }
+  drawFacultySetTags(ctx);
   drawSubHeading(ctx, s);
   drawBoxOverlay(ctx);
   drawTagOverlay(ctx);
+  // Sync DOM-based small faculty tags (used in double faculty mode)
+  try { syncFacultyTagsDOM(); } catch (e) { /* ignore */ }
 }
 
 function downloadBanner() {
