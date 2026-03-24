@@ -331,7 +331,7 @@
     </div>
 
     <div class="section-title">Faculty Photos</div>
-    <button class="btn-add-faculty" onclick="toggleFacultyUploadOptions()">+ Add Faculty Photo(s)</button>
+    <button id="btnAddFaculty" class="btn-add-faculty" onclick="toggleFacultyUploadOptions()">+ Add Faculty Photo(s)</button>
     <div id="facultyUploadOptions" class="faculty-upload-options hidden">
       <div class="faculty-upload-row">
         <button type="button" class="fc-btn" onclick="showFacultyUploadMode('single')">1 Set of Faculties</button>
@@ -736,6 +736,12 @@ window.addEventListener('DOMContentLoaded', () => {
   initCropEvents();
   initEraseEvents();
   initCanvasDrag();
+  // Ensure Add Faculty button reliably toggles upload options
+  const addFacBtn = document.getElementById('btnAddFaculty');
+  if (addFacBtn) {
+    addFacBtn.removeAttribute('onclick');
+    addFacBtn.addEventListener('click', (ev) => { ev.preventDefault(); toggleFacultyUploadOptions(); });
+  }
   syncSubTextSliders();
   bindHistoryListeners();
   captureHistorySnapshot(true);
@@ -2521,26 +2527,12 @@ function getFacultyDrawRect(fac, index, totalCount) {
   let destH = destW / aspect;
   const bottomShift = (fac.posY / 100) * H;
 
-  // Apply global faculty scale
-  let finalDestW = destW * (facultyGlobalScalePct / 100);
-  let finalDestH = finalDestW / aspect;
+  const destH = destW / aspect;
+  const bottomShift = (fac.posY / 100) * H;
+  const destX = centerX - destW / 2;
+  const destY = H - destH + bottomShift;
 
-  // Ensure image stays fully inside canvas horizontally by clamping center
-  const minCenterX = finalDestW / 2;
-  const maxCenterX = Math.max(minCenterX, W - finalDestW / 2);
-  const clampedCenterX = Math.max(minCenterX, Math.min(maxCenterX, centerX));
-  const destX = clampedCenterX - finalDestW / 2;
-
-  // Vertical placement: anchor to bottom, then clamp so top/bottom remain visible
-  let destY = H - finalDestH + bottomShift;
-  if (destY + finalDestH > H) destY = H - finalDestH;
-  if (destY < 0) destY = 0;
-
-  // Use final sizes
-  const destWFinal = finalDestW;
-  const destHFinal = finalDestH;
-
-  return { sx: fac.cropX * img.naturalWidth, sy: fac.cropY * img.naturalHeight, sw, sh, destX, destY, destW: destWFinal, destH: destHFinal };
+  return { sx: fac.cropX * img.naturalWidth, sy: fac.cropY * img.naturalHeight, sw, sh, destX, destY, destW, destH };
 }
 
 // First faculty is drawn ON TOP (in front), last is drawn behind
