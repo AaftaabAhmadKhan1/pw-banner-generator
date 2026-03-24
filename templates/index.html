@@ -2518,12 +2518,29 @@ function getFacultyDrawRect(fac, index, totalCount) {
   // Slightly enlarge faculty images when in two-set (double) faculty mode
   const doubleModeSizeBoost = (typeof _tagFacultyMode !== 'undefined' && _tagFacultyMode === 'double') ? FACULTY_DOUBLE_SIZE_BOOST : 1.0;
   const destW = (baseWidth + overlapBoost) * ((fac.scale || 100) / 100) * doubleModeSizeBoost;
-  const destH = destW / aspect;
+  let destH = destW / aspect;
   const bottomShift = (fac.posY / 100) * H;
-  const destX = centerX - destW / 2;
-  const destY = H - destH + bottomShift;
 
-  return { sx: fac.cropX * img.naturalWidth, sy: fac.cropY * img.naturalHeight, sw, sh, destX, destY, destW, destH };
+  // Apply global faculty scale
+  let finalDestW = destW * (facultyGlobalScalePct / 100);
+  let finalDestH = finalDestW / aspect;
+
+  // Ensure image stays fully inside canvas horizontally by clamping center
+  const minCenterX = finalDestW / 2;
+  const maxCenterX = Math.max(minCenterX, W - finalDestW / 2);
+  const clampedCenterX = Math.max(minCenterX, Math.min(maxCenterX, centerX));
+  const destX = clampedCenterX - finalDestW / 2;
+
+  // Vertical placement: anchor to bottom, then clamp so top/bottom remain visible
+  let destY = H - finalDestH + bottomShift;
+  if (destY + finalDestH > H) destY = H - finalDestH;
+  if (destY < 0) destY = 0;
+
+  // Use final sizes
+  const destWFinal = finalDestW;
+  const destHFinal = finalDestH;
+
+  return { sx: fac.cropX * img.naturalWidth, sy: fac.cropY * img.naturalHeight, sw, sh, destX, destY, destW: destWFinal, destH: destHFinal };
 }
 
 // First faculty is drawn ON TOP (in front), last is drawn behind
