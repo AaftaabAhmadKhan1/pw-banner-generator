@@ -367,10 +367,6 @@
     </div>
     <div id="facultyList"></div>
     <input type="file" id="facultyFileInput" accept="image/*" multiple style="display:none" />
-    <div class="fc-sliders" style="margin-top:12px;">
-      <label>Scale All Faculties <span id="facultyScaleLbl">100%</span></label>
-      <input type="range" id="facultyGlobalScale" min="60" max="200" step="1" value="100" oninput="onFacultyGlobalScale(this.value)" />
-    </div>
     <div class="drag-hint">Tip: Click and drag faculty photos or the batch name text directly on the canvas to reposition them.</div>
 
     <div class="section-title" style="cursor:pointer;" onclick="toggleCustom()">
@@ -689,8 +685,6 @@ let leftFacultyTagText = '';
 let rightFacultyTagText = '';
 // Positions for small faculty tags (percentages relative to canvas)
 let leftFacultyTagPos = { xPct: 25, yPct: 85 };
-// Global slider to scale all faculty images (percentage)
-let facultyGlobalScalePct = 100;
 let rightFacultyTagPos = { xPct: 75, yPct: 85 };
 
 let appHistory = [];
@@ -875,14 +869,6 @@ function syncOverlayControlStates() {
   if (tagWrap) tagWrap.classList.toggle('collapsed', !tagControlsOpen);
   if (boxToggle) boxToggle.classList.toggle('open', boxControlsOpen);
   if (tagToggle) tagToggle.classList.toggle('open', tagControlsOpen);
-}
-
-function onFacultyGlobalScale(value) {
-  facultyGlobalScalePct = parseFloat(value) || 100;
-  const lbl = document.getElementById('facultyScaleLbl');
-  if (lbl) lbl.textContent = Math.round(facultyGlobalScalePct) + '%';
-  render();
-  scheduleHistoryCapture();
 }
 
 function toggleOverlayControls(type) {
@@ -1166,7 +1152,6 @@ function serializeAppState() {
     pendingFacultySide: _pendingFacultySide,
     facultyUploadMode: _facultyUploadMode,
     showFacultyUploadOptions: !document.getElementById('facultyUploadOptions').classList.contains('hidden'),
-    facultyGlobalScalePct,
   };
 }
 
@@ -1255,13 +1240,6 @@ function restoreAppState(snapshot) {
     _pendingFacultyLine = snapshot.pendingFacultyLine || 1;
     _pendingFacultySide = snapshot.pendingFacultySide || 'center';
     _facultyUploadMode = snapshot.facultyUploadMode || null;
-
-    // restore global faculty scale
-    facultyGlobalScalePct = snapshot.facultyGlobalScalePct || 100;
-    const gSlider = document.getElementById('facultyGlobalScale');
-    const gLabel = document.getElementById('facultyScaleLbl');
-    if (gSlider) gSlider.value = facultyGlobalScalePct;
-    if (gLabel) gLabel.textContent = Math.round(facultyGlobalScalePct) + '%';
 
     applyBannerDimensions();
     buildPWTemplateGrid();
@@ -1644,23 +1622,24 @@ function autoArrangeFaculty(preserveAdjustments = false) {
 
     const layoutCount = Math.max(1, line1.length || line2.length);
     const layout = getFacultyStripLayout(layoutCount);
-    const overlapBoost = FACULTY_VISUAL_OVERLAP;
-    // Default strip values
+    let itemWidth = layout.itemWidth;
     let stripWidth = layout.stripWidth;
     let leftEdge = layout.leftMargin;
 
-    // For left/right side layouts reserve extra gap so groups don't touch
     if (side === 'left' || side === 'right') {
       const halfCanvas = W / 2;
-      const groupWidth = Math.min(layout.stripWidth * 0.6, Math.max(0, halfCanvas - FACULTY_SIDE_GAP));
-      stripWidth = Math.max(groupWidth, layout.itemWidth * layoutCount);
+      // Reserve extra gap between left and right groups so they don't touch
+      const groupWidth = Math.min(stripWidth * 0.6, Math.max(0, halfCanvas - FACULTY_SIDE_GAP));
+      // Use the global double-size boost for side item width when in double mode
+      const sideWidthFactor = (typeof _tagFacultyMode !== 'undefined' && _tagFacultyMode === 'double') ? FACULTY_DOUBLE_SIZE_BOOST : 0.9;
+      itemWidth = Math.min(itemWidth * sideWidthFactor, layoutCount > 0 ? groupWidth / layoutCount : itemWidth);
+      stripWidth = layoutCount === 1 ? itemWidth : Math.max(groupWidth, itemWidth * layoutCount);
       const centerX = side === 'left' ? W * 0.25 : W * 0.75;
       leftEdge = centerX - stripWidth / 2;
     }
 
-    // Allocate even slots across the strip so scaled images fit without overlap
-    const allocated = Math.max(1, stripWidth / layoutCount);
-    const line1Centers = Array.from({ length: layoutCount }, (_, i) => leftEdge + (allocated / 2) + i * allocated);
+    const line1Step = layoutCount === 1 ? itemWidth : (stripWidth - itemWidth) / (layoutCount - 1);
+    const line1Centers = Array.from({ length: layoutCount }, (_, i) => leftEdge + (itemWidth / 2) + i * line1Step);
     const line2Centers = line1Centers.length > 1
       ? line1Centers.slice(0, -1).map((center, i) => (center + line1Centers[i + 1]) / 2)
       : line1Centers;
@@ -1675,11 +1654,7 @@ function autoArrangeFaculty(preserveAdjustments = false) {
           // enlarge scale when using double mode
           fac.scale = (typeof _tagFacultyMode !== 'undefined' && _tagFacultyMode === 'double') ? Math.round(100 * FACULTY_DOUBLE_SIZE_BOOST) : 100;
         }
-        // Compute a baseWidth so that after per-fac scale and global scale the final drawn width
-        // fits within the allocated slot and avoids overlap.
-        const desiredMultiplier = ((fac.scale || 100) / 100) * ((typeof _tagFacultyMode !== 'undefined' && _tagFacultyMode === 'double') ? FACULTY_DOUBLE_SIZE_BOOST : 1.0) * (facultyGlobalScalePct / 100);
-        const computedBase = Math.max(40, Math.min(layout.itemWidth, (allocated / Math.max(0.01, desiredMultiplier)) - overlapBoost));
-        fac.baseWidth = computedBase;
+        fac.baseWidth = itemWidth;
       }
     });
 
@@ -1693,9 +1668,7 @@ function autoArrangeFaculty(preserveAdjustments = false) {
           // enlarge scale when using double mode
           fac.scale = (typeof _tagFacultyMode !== 'undefined' && _tagFacultyMode === 'double') ? Math.round(100 * FACULTY_DOUBLE_SIZE_BOOST) : 100;
         }
-        const desiredMultiplier = ((fac.scale || 100) / 100) * ((typeof _tagFacultyMode !== 'undefined' && _tagFacultyMode === 'double') ? FACULTY_DOUBLE_SIZE_BOOST : 1.0) * (facultyGlobalScalePct / 100);
-        const computedBase = Math.max(40, Math.min(layout.itemWidth, (allocated / Math.max(0.01, desiredMultiplier)) - overlapBoost));
-        fac.baseWidth = computedBase;
+        fac.baseWidth = itemWidth;
       }
     });
   };
@@ -2544,9 +2517,7 @@ function getFacultyDrawRect(fac, index, totalCount) {
   const overlapBoost = (fac.groupCount || totalCount) > 1 ? FACULTY_VISUAL_OVERLAP : 0;
   // Slightly enlarge faculty images when in two-set (double) faculty mode
   const doubleModeSizeBoost = (typeof _tagFacultyMode !== 'undefined' && _tagFacultyMode === 'double') ? FACULTY_DOUBLE_SIZE_BOOST : 1.0;
-  let destW = (baseWidth + overlapBoost) * ((fac.scale || 100) / 100) * doubleModeSizeBoost;
-  // Apply global faculty scale slider
-  destW = destW * (facultyGlobalScalePct / 100);
+  const destW = (baseWidth + overlapBoost) * ((fac.scale || 100) / 100) * doubleModeSizeBoost;
   const destH = destW / aspect;
   const bottomShift = (fac.posY / 100) * H;
   const destX = centerX - destW / 2;
