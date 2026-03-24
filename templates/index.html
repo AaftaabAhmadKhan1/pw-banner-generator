@@ -708,6 +708,8 @@ const FACULTY_LAYOUTS = {
 const FACULTY_VISUAL_OVERLAP = 88;
 // Multiplier to enlarge faculty images when using two-set (double) layout
 const FACULTY_DOUBLE_SIZE_BOOST = 1.20;
+// Horizontal gap (pixels) reserved between left and right faculty sets
+const FACULTY_SIDE_GAP = 300;
 
 // Bounding box of the last rendered batch name text (for hit detection)
 let _lastTextBBox = null; // { x, y, w, h }
@@ -1626,7 +1628,8 @@ function autoArrangeFaculty(preserveAdjustments = false) {
 
     if (side === 'left' || side === 'right') {
       const halfCanvas = W / 2;
-      const groupWidth = Math.min(stripWidth * 0.6, halfCanvas - 24);
+      // Reserve extra gap between left and right groups so they don't touch
+      const groupWidth = Math.min(stripWidth * 0.6, Math.max(0, halfCanvas - FACULTY_SIDE_GAP));
       // Use the global double-size boost for side item width when in double mode
       const sideWidthFactor = (typeof _tagFacultyMode !== 'undefined' && _tagFacultyMode === 'double') ? FACULTY_DOUBLE_SIZE_BOOST : 0.9;
       itemWidth = Math.min(itemWidth * sideWidthFactor, layoutCount > 0 ? groupWidth / layoutCount : itemWidth);
