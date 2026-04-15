@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin - Allow List</title>
+  <link rel="icon" type="image/jpeg" href="/icon.jpg" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #12121a;
+      --border: #2a2a44;
+      --text: #e8e8f0;
+      --primary: #7c5cfc;
+      --success: #4ade80;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:40px 20px; }
+    .container { background:var(--surface); border:1px solid var(--border); padding:40px; border-radius:12px; max-width:600px; width:100%; margin:0 auto; box-shadow:0 8px 32px rgba(0,0,0,0.5); }
+    h1 { font-size:24px; font-weight:700; margin-bottom:8px; }
+    p.desc { color:#8888aa; margin-bottom:24px; font-size:14px; line-height:1.5; }
+    form { display:flex; flex-direction:column; gap:16px; }
+    textarea { padding:14px; border-radius:8px; border:1px solid var(--border); background:#1a1a28; color:var(--text); font-size:14px; outline:none; transition:border 0.2s; resize:vertical; min-height:200px; font-family:monospace; }
+    textarea:focus { border-color:var(--primary); }
+    button { padding:14px; border-radius:8px; border:none; background:var(--primary); color:#fff; font-size:16px; font-weight:600; cursor:pointer; align-self:flex-start; padding:12px 24px; }
+    button:hover { opacity:0.9; }
+    .msg { color:var(--success); font-size:14px; margin-bottom:16px; background:rgba(74,222,128,0.1); padding:10px; border-radius:6px; border:1px solid rgba(74,222,128,0.2); }
+    .header-link { display:inline-block; margin-bottom:20px; color:var(--primary); text-decoration:none; font-size:14px; }
+    .header-link:hover { text-decoration:underline; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="{{ url_for('index') }}" class="header-link">← Back to Generator</a>
+    <h1>Admin - Allowed Emails</h1>
+    <p class="desc">Enter email addresses allowed to access the app (one per line). Admin emails (like <code>admin@admin.com</code>) normally bypass this, but you can explicitly add others here to allow them.</p>
+    {% if msg %}
+      <div class="msg">{{ msg }}</div>
+    {% endif %}
+    <form method="POST">
+      <textarea name="emails" placeholder="user@example.com&#10;test@domain.com">{{ emails }}</textarea>
+      <button type="submit">Save Allow List</button>
+    </form>
+  </div>
+</body>
+</html>

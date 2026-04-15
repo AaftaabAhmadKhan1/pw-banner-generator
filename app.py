@@ -10,15 +10,52 @@ import os
 from collections import deque
 from pathlib import Path
 
-from flask import Flask, render_template, send_from_directory, request, jsonify
-from PIL import Image, ImageFilter
-
-ROOT = Path(__file__).parent
-BG_REMOVE_API_URL = os.getenv("BG_REMOVE_API_URL", "").strip()
-IS_LIVE_APP = bool(os.getenv("VERCEL") or os.getenv("VERCEL_ENV"))
+from flask import Flask, render_template, send_from_directory, request, jsonify, session, redirect, url_for
+import json
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
+app.secret_key = os.getenv("SECRET_KEY", "pw_hackathon_super_secret")
 app.config["MAX_CONTENT_LENGTH"] = 64 * 1024 * 1024  # 64 MB
+
+ALLOW_LIST_FILE = "/tmp/allowed_emails.json" if os.getenv("VERCEL") or os.getenv("VERCEL_ENV") else "allowed_emails.json"
+
+def get_allowed_emails():
+    if os.path.exists(ALLOW_LIST_FILE):
+        try:
+            with open(ALLOW_LIST_FILE, "r") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return []
+
+def save_allowed_emails(emails):
+    try:
+        with open(ALLOW_LIST_FILE, "w") as f:
+            json.dump(emails, f)
+    except Exception as e:
+        print(f"Error saving allowed emails: {e}")
+
+@app.before_request
+def require_login():
+    allowed_endpoints = ['login', 'admin', 'logout', 'static', 'serve_icon']
+    if request.endpoint in allowed_endpoints:
+        return
+    if request.path.startswith('/static/'):
+        return
+
+    # Check for login
+    user = session.get("user")
+    if not user:
+        if request.path.startswith('/api/'):
+            return jsonify({"error": "Unauthorized"}), 401
+        return redirect(url_for('login'))
+        
+    # Strictly enforce allowlist for standard users
+    if user != "admin@admin.com" and user not in get_allowed_emails():
+        session.pop("user", None)
+        if request.path.startswith('/api/'):
+            return jsonify({"error": "Unauthorized access. Email not in allow list."}), 401
+        return redirect(url_for('login', error="Your email has been removed from the allow list."))
 
 # Try to import rembg at startup and create a persistent session
 try:
@@ -239,7 +276,49 @@ def index():
         "index.html",
         bg_remove_api_url=BG_REMOVE_API_URL,
         is_live_app=IS_LIVE_APP,
+        user=session.get("user")
     )
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    error = request.args.get("error")
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        if not email:
+            error = "Email is required."
+        elif email == "admin@admin.com" or email in get_allowed_emails():
+            session["user"] = email
+            return redirect(url_for("index"))
+        else:
+            error = "Email not found in the allow list. Please contact the administrator."
+    return render_template("login.html", error=error)
+
+
+@app.route("/logout")
+def logout():
+    session.pop("user", None)
+    return redirect(url_for("login"))
+
+
+@app.route("/admin", methods=["GET", "POST"])
+def admin():
+    # Optional: secure admin route. We'll allow access if user is admin@admin.com or just let everyone see it for hackathon simplicity.
+    # To secure:
+    # if session.get("user") != "admin@admin.com":
+    #     return "Unauthorized", 401
+    msg = None
+    if request.method == "POST":
+        emails_text = request.form.get("emails", "")
+        email_list = [e.strip().lower() for e in emails_text.replace(",", "\n").split("\n") if e.strip()]
+        # Remove duplicates
+        email_list = list(dict.fromkeys(email_list))
+        save_allowed_emails(email_list)
+        msg = "Allow list successfully updated."
+    
+    current_emails = get_allowed_emails()
+    emails_str = "\n".join(current_emails)
+    return render_template("admin.html", emails=emails_str, msg=msg)
 
 
 @app.route("/icon.jpg")

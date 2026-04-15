@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - Batch Banner Generator</title>
+  <link rel="icon" type="image/jpeg" href="/icon.jpg" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #12121a;
+      --border: #2a2a44;
+      --text: #e8e8f0;
+      --primary: #7c5cfc;
+      --accent: #ff6b6b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; align-items:center; justify-content:center; }
+    .container { background:var(--surface); border:1px solid var(--border); padding:40px; border-radius:12px; max-width:400px; width:100%; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,0.5); }
+    h1 { font-size:24px; font-weight:700; margin-bottom:12px; }
+    p.desc { color:#8888aa; margin-bottom:30px; font-size:14px; line-height:1.5; }
+    form { display:flex; flex-direction:column; gap:16px; }
+    input { padding:14px; border-radius:8px; border:1px solid var(--border); background:#1a1a28; color:var(--text); font-size:16px; outline:none; transition:border 0.2s; }
+    input:focus { border-color:var(--primary); }
+    button { padding:14px; border-radius:8px; border:none; background:var(--primary); color:#fff; font-size:16px; font-weight:600; cursor:pointer; transition:opacity 0.2s; }
+    button:hover { opacity:0.9; }
+    .error { color:var(--accent); font-size:14px; margin-bottom:16px; background:rgba(255,107,107,0.1); padding:10px; border-radius:6px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Welcome Back</h1>
+    <p class="desc">Please enter your email to access the Batch Banner Generator.</p>
+    {% if error %}
+      <div class="error">{{ error }}</div>
+    {% endif %}
+    <form method="POST" action="{{ url_for('login') }}">
+      <input type="email" name="email" placeholder="Email address" required autofocus />
+      <button type="submit">Log in</button>
+    </form>
+  </div>
+</body>
+</html>

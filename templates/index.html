@@ -201,6 +201,13 @@
     </div>
   </div>
   <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;">
+    {% if user %}
+      <span style="font-size:12px;color:var(--text-muted);">{{ user }}</span>
+      {% if user == 'admin@admin.com' %}
+        <a class="header-action" href="{{ url_for('admin') }}" style="text-decoration:none;">Admin</a>
+      {% endif %}
+      <a class="header-action" href="{{ url_for('logout') }}" style="text-decoration:none;">Logout</a>
+    {% endif %}
     <button class="header-action" type="button" id="undoBtn" onclick="undoAppState()">Undo</button>
     <button class="header-action" type="button" id="redoBtn" onclick="redoAppState()">Redo</button>
     <a
@@ -2524,9 +2531,6 @@ function getFacultyDrawRect(fac, index, totalCount) {
   // Slightly enlarge faculty images when in two-set (double) faculty mode
   const doubleModeSizeBoost = (typeof _tagFacultyMode !== 'undefined' && _tagFacultyMode === 'double') ? FACULTY_DOUBLE_SIZE_BOOST : 1.0;
   const destW = (baseWidth + overlapBoost) * ((fac.scale || 100) / 100) * doubleModeSizeBoost;
-  let destH = destW / aspect;
-  const bottomShift = (fac.posY / 100) * H;
-
   const destH = destW / aspect;
   const bottomShift = (fac.posY / 100) * H;
   const destX = centerX - destW / 2;
