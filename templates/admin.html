@@ -3,45 +3,396 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin - Allow List</title>
+  <title>Admin Access - PW Banner Generator</title>
   <link rel="icon" type="image/jpeg" href="/icon.jpg" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0a0a0f;
-      --surface: #12121a;
-      --border: #2a2a44;
-      --text: #e8e8f0;
-      --primary: #7c5cfc;
-      --success: #4ade80;
+      --bg: #0c1112;
+      --surface: rgba(18, 26, 28, 0.9);
+      --surface-2: rgba(255, 255, 255, 0.05);
+      --line: rgba(255, 255, 255, 0.1);
+      --text: #f5f0e8;
+      --muted: rgba(245, 240, 232, 0.66);
+      --accent: #ff6a3d;
+      --accent-soft: rgba(255, 106, 61, 0.16);
+      --accent-2: #79d6c6;
+      --success: #7ef0b4;
+      --success-bg: rgba(126, 240, 180, 0.1);
+      --danger: #ffb3a3;
+      --danger-bg: rgba(255, 106, 61, 0.1);
     }
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:40px 20px; }
-    .container { background:var(--surface); border:1px solid var(--border); padding:40px; border-radius:12px; max-width:600px; width:100%; margin:0 auto; box-shadow:0 8px 32px rgba(0,0,0,0.5); }
-    h1 { font-size:24px; font-weight:700; margin-bottom:8px; }
-    p.desc { color:#8888aa; margin-bottom:24px; font-size:14px; line-height:1.5; }
-    form { display:flex; flex-direction:column; gap:16px; }
-    textarea { padding:14px; border-radius:8px; border:1px solid var(--border); background:#1a1a28; color:var(--text); font-size:14px; outline:none; transition:border 0.2s; resize:vertical; min-height:200px; font-family:monospace; }
-    textarea:focus { border-color:var(--primary); }
-    button { padding:14px; border-radius:8px; border:none; background:var(--primary); color:#fff; font-size:16px; font-weight:600; cursor:pointer; align-self:flex-start; padding:12px 24px; }
-    button:hover { opacity:0.9; }
-    .msg { color:var(--success); font-size:14px; margin-bottom:16px; background:rgba(74,222,128,0.1); padding:10px; border-radius:6px; border:1px solid rgba(74,222,128,0.2); }
-    .header-link { display:inline-block; margin-bottom:20px; color:var(--primary); text-decoration:none; font-size:14px; }
-    .header-link:hover { text-decoration:underline; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: 'Manrope', sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(255, 106, 61, 0.18), transparent 22%),
+        radial-gradient(circle at 84% 18%, rgba(121, 214, 198, 0.18), transparent 20%),
+        linear-gradient(160deg, #0d1315 0%, #12191b 45%, #0b1011 100%);
+      padding: 28px 14px 40px;
+    }
+    .wrap {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 24px;
+    }
+    .panel,
+    .workspace {
+      border-radius: 28px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+    }
+    .panel {
+      padding: 24px;
+      align-self: start;
+      position: sticky;
+      top: 24px;
+    }
+    .workspace {
+      padding: 28px;
+      overflow: hidden;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 26px;
+    }
+    .brand img {
+      width: 56px;
+      height: 56px;
+      border-radius: 18px;
+      object-fit: cover;
+    }
+    .brand small {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 5px;
+    }
+    .brand strong {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 20px;
+      letter-spacing: -0.04em;
+    }
+    .stack {
+      display: grid;
+      gap: 14px;
+    }
+    .stat {
+      padding: 16px;
+      border-radius: 20px;
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+    }
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+    .stat strong {
+      font-size: 24px;
+      font-weight: 800;
+    }
+    .note {
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--muted);
+      margin-top: 16px;
+    }
+    .link-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+    .link-row a {
+      color: var(--text);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+    }
+    .hero {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 26px;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      border: 1px solid rgba(255, 106, 61, 0.18);
+      color: #ffd7ca;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .hero h1 {
+      margin: 14px 0 10px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(2rem, 4vw, 3rem);
+      letter-spacing: -0.05em;
+    }
+    .hero p {
+      margin: 0;
+      max-width: 720px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .message {
+      margin-bottom: 16px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      font-size: 14px;
+      line-height: 1.6;
+      border: 1px solid transparent;
+    }
+    .message.success {
+      color: var(--success);
+      background: var(--success-bg);
+      border-color: rgba(126, 240, 180, 0.18);
+    }
+    .message.error {
+      color: var(--danger);
+      background: var(--danger-bg);
+      border-color: rgba(255, 106, 61, 0.18);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 20px;
+      align-items: start;
+    }
+    .card {
+      padding: 22px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--line);
+    }
+    .card h2 {
+      margin: 0 0 10px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.4rem;
+      letter-spacing: -0.04em;
+    }
+    .card p {
+      margin: 0 0 18px;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+    textarea {
+      width: 100%;
+      min-height: 380px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: rgba(8, 12, 13, 0.5);
+      color: var(--text);
+      padding: 18px 20px;
+      resize: vertical;
+      outline: none;
+      font-size: 15px;
+      line-height: 1.7;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    textarea:focus {
+      border-color: rgba(121, 214, 198, 0.44);
+      box-shadow: 0 0 0 6px rgba(121, 214, 198, 0.1);
+    }
+    button {
+      margin-top: 16px;
+      border: none;
+      border-radius: 18px;
+      background: linear-gradient(135deg, var(--accent-2), var(--accent));
+      color: #101617;
+      font-weight: 800;
+      font-size: 15px;
+      font-family: inherit;
+      padding: 16px 20px;
+      cursor: pointer;
+      box-shadow: 0 18px 38px rgba(255, 106, 61, 0.18);
+    }
+    .tips {
+      display: grid;
+      gap: 14px;
+    }
+    .tip {
+      padding: 16px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--line);
+    }
+    .tip strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .tip span {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+    .admin-list {
+      margin-top: 16px;
+      padding: 16px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--line);
+    }
+    .admin-list strong {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    .admin-chip-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .admin-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(121, 214, 198, 0.12);
+      color: #baf0e7;
+      border: 1px solid rgba(121, 214, 198, 0.16);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    @media (max-width: 980px) {
+      .wrap,
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      .panel {
+        position: static;
+      }
+    }
+    @media (max-width: 640px) {
+      .workspace,
+      .panel {
+        padding: 20px;
+        border-radius: 22px;
+      }
+      .hero {
+        flex-direction: column;
+      }
+      textarea {
+        min-height: 300px;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <a href="{{ url_for('index') }}" class="header-link">‚Üê Back to Generator</a>
-    <h1>Admin - Allowed Emails</h1>
-    <p class="desc">Enter email addresses allowed to access the app (one per line). Admin emails (like <code>admin@admin.com</code>) normally bypass this, but you can explicitly add others here to allow them.</p>
-    {% if msg %}
-      <div class="msg">{{ msg }}</div>
-    {% endif %}
-    <form method="POST">
-      <textarea name="emails" placeholder="user@example.com&#10;test@domain.com">{{ emails }}</textarea>
-      <button type="submit">Save Allow List</button>
-    </form>
+  <div class="wrap">
+    <aside class="panel">
+      <div class="brand">
+        <img src="/icon.jpg" alt="PW Banner Generator logo" />
+        <div>
+          <small>Admin Console</small>
+          <strong>Access Control</strong>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="stat">
+          <span>Signed In As</span>
+          <strong style="font-size:16px;line-height:1.5;word-break:break-word;">{{ user }}</strong>
+        </div>
+        <div class="stat">
+          <span>Allowed Emails</span>
+          <strong>{{ allow_count }}</strong>
+        </div>
+        <div class="stat">
+          <span>Admin Emails</span>
+          <strong>{{ admin_emails|length }}</strong>
+        </div>
+      </div>
+
+      <p class="note">Update one email per line. Admin emails stay privileged automatically and donít need to be duplicated in the allow list.</p>
+
+      <div class="link-row">
+        <a href="{{ url_for('index') }}">Open Generator</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <div class="hero">
+        <div>
+          <div class="pill">Live Access Management</div>
+          <h1>Manage who can enter the app.</h1>
+          <p>Use this panel to control access to the banner generator. Save a clean allow list and the login screen will immediately honor the updated set of approved emails.</p>
+        </div>
+      </div>
+
+      {% if msg %}
+        <div class="message success">{{ msg }}</div>
+      {% endif %}
+      {% if error %}
+        <div class="message error">{{ error }}</div>
+      {% endif %}
+
+      <div class="grid">
+        <section class="card">
+          <h2>Allow List Editor</h2>
+          <p>Add approved user emails below. Commas are also accepted, but one line per email is easiest to manage and review.</p>
+          <form method="POST">
+            <textarea name="emails" placeholder="designer@company.com&#10;operator@company.com&#10;lead@company.com">{{ emails }}</textarea>
+            <button type="submit">Save Allow List</button>
+          </form>
+        </section>
+
+        <section class="tips">
+          <div class="tip">
+            <strong>How it works</strong>
+            <span>Any email in this list can sign in. Any email inside `ADMIN_EMAILS` can also access this admin page.</span>
+          </div>
+          <div class="tip">
+            <strong>Recommended env vars</strong>
+            <span>Set `SECRET_KEY` for sessions, `ADMIN_EMAILS` for admin access, and `ALLOWED_EMAILS` to seed first-time deployments.</span>
+          </div>
+          <div class="tip">
+            <strong>Validation</strong>
+            <span>Entries are normalized to lowercase, duplicates are removed automatically, and invalid emails are blocked before save.</span>
+          </div>
+          <div class="admin-list">
+            <strong>Configured Admin Emails</strong>
+            <div class="admin-chip-wrap">
+              {% for email in admin_emails %}
+                <span class="admin-chip">{{ email }}</span>
+              {% endfor %}
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
   </div>
 </body>
 </html>

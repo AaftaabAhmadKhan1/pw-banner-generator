@@ -1,44 +1,420 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login - Batch Banner Generator</title>
+  <title>Sign In - PW Banner Generator</title>
   <link rel="icon" type="image/jpeg" href="/icon.jpg" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0a0a0f;
-      --surface: #12121a;
-      --border: #2a2a44;
-      --text: #e8e8f0;
-      --primary: #7c5cfc;
-      --accent: #ff6b6b;
+      --bg: #f4efe6;
+      --panel: rgba(20, 28, 30, 0.92);
+      --panel-soft: rgba(255, 255, 255, 0.08);
+      --line: rgba(255, 255, 255, 0.14);
+      --text: #f4f1ea;
+      --muted: rgba(244, 241, 234, 0.7);
+      --accent: #ff6a3d;
+      --accent-2: #f7c66a;
+      --accent-3: #79d6c6;
+      --danger: #ff9f8d;
+      --shadow: 0 30px 80px rgba(15, 20, 24, 0.28);
     }
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; align-items:center; justify-content:center; }
-    .container { background:var(--surface); border:1px solid var(--border); padding:40px; border-radius:12px; max-width:400px; width:100%; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,0.5); }
-    h1 { font-size:24px; font-weight:700; margin-bottom:12px; }
-    p.desc { color:#8888aa; margin-bottom:30px; font-size:14px; line-height:1.5; }
-    form { display:flex; flex-direction:column; gap:16px; }
-    input { padding:14px; border-radius:8px; border:1px solid var(--border); background:#1a1a28; color:var(--text); font-size:16px; outline:none; transition:border 0.2s; }
-    input:focus { border-color:var(--primary); }
-    button { padding:14px; border-radius:8px; border:none; background:var(--primary); color:#fff; font-size:16px; font-weight:600; cursor:pointer; transition:opacity 0.2s; }
-    button:hover { opacity:0.9; }
-    .error { color:var(--accent); font-size:14px; margin-bottom:16px; background:rgba(255,107,107,0.1); padding:10px; border-radius:6px; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Manrope', sans-serif;
+      color: #172124;
+      background:
+        radial-gradient(circle at top left, rgba(255, 106, 61, 0.22), transparent 26%),
+        radial-gradient(circle at 85% 18%, rgba(121, 214, 198, 0.28), transparent 22%),
+        radial-gradient(circle at bottom right, rgba(247, 198, 106, 0.32), transparent 24%),
+        linear-gradient(135deg, #efe4d2 0%, #f7f2ea 48%, #ece6dc 100%);
+      overflow-x: hidden;
+    }
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      inset: auto;
+      border-radius: 999px;
+      filter: blur(8px);
+      opacity: 0.9;
+      pointer-events: none;
+    }
+    body::before {
+      width: 340px;
+      height: 340px;
+      top: -110px;
+      left: -90px;
+      background: linear-gradient(135deg, rgba(255, 106, 61, 0.38), rgba(247, 198, 106, 0.16));
+    }
+    body::after {
+      width: 420px;
+      height: 420px;
+      right: -150px;
+      bottom: -180px;
+      background: linear-gradient(135deg, rgba(121, 214, 198, 0.34), rgba(49, 72, 75, 0.08));
+    }
+    .shell {
+      width: min(1180px, calc(100% - 32px));
+      min-height: 100vh;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 28px;
+      align-items: center;
+      padding: 32px 0;
+    }
+    .hero {
+      padding: 42px 24px 42px 8px;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.55);
+      border: 1px solid rgba(23, 33, 36, 0.08);
+      backdrop-filter: blur(10px);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 0 6px rgba(255, 106, 61, 0.12);
+    }
+    h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(3rem, 5vw, 5.2rem);
+      line-height: 0.95;
+      letter-spacing: -0.05em;
+      margin: 24px 0 18px;
+      max-width: 620px;
+    }
+    .lead {
+      font-size: 18px;
+      line-height: 1.7;
+      max-width: 540px;
+      color: rgba(23, 33, 36, 0.78);
+      margin: 0 0 28px;
+    }
+    .feature-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      max-width: 620px;
+    }
+    .feature {
+      padding: 18px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.5);
+      border: 1px solid rgba(23, 33, 36, 0.07);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 18px 35px rgba(83, 61, 42, 0.08);
+    }
+    .feature strong {
+      display: block;
+      font-size: 15px;
+      margin-bottom: 6px;
+    }
+    .feature span {
+      font-size: 13px;
+      line-height: 1.6;
+      color: rgba(23, 33, 36, 0.68);
+    }
+    .card {
+      position: relative;
+      overflow: hidden;
+      padding: 30px;
+      border-radius: 30px;
+      color: var(--text);
+      background:
+        linear-gradient(160deg, rgba(17, 25, 27, 0.98), rgba(20, 29, 31, 0.94)),
+        linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      isolation: isolate;
+    }
+    .card::before,
+    .card::after {
+      content: "";
+      position: absolute;
+      border-radius: 999px;
+      z-index: -1;
+      pointer-events: none;
+    }
+    .card::before {
+      width: 240px;
+      height: 240px;
+      top: -90px;
+      right: -40px;
+      background: radial-gradient(circle, rgba(255, 106, 61, 0.34), transparent 70%);
+    }
+    .card::after {
+      width: 200px;
+      height: 200px;
+      left: -70px;
+      bottom: -90px;
+      background: radial-gradient(circle, rgba(121, 214, 198, 0.24), transparent 72%);
+    }
+    .brand-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .logo {
+      width: 56px;
+      height: 56px;
+      border-radius: 18px;
+      object-fit: cover;
+      box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28);
+    }
+    .brand small {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 5px;
+    }
+    .brand strong {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 22px;
+      letter-spacing: -0.04em;
+    }
+    .status-pill {
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    h2 {
+      margin: 0;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 2.1rem;
+      letter-spacing: -0.04em;
+    }
+    .card p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 15px;
+    }
+    .error {
+      margin: 20px 0 0;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(255, 159, 141, 0.12);
+      border: 1px solid rgba(255, 159, 141, 0.25);
+      color: var(--danger);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    form {
+      margin-top: 28px;
+      display: grid;
+      gap: 16px;
+    }
+    label {
+      display: block;
+      margin-bottom: 10px;
+      color: rgba(244, 241, 234, 0.88);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .field {
+      position: relative;
+    }
+    input {
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      border-radius: 20px;
+      padding: 18px 20px;
+      font-size: 16px;
+      font-family: inherit;
+      outline: none;
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+    input::placeholder { color: rgba(244, 241, 234, 0.35); }
+    input:focus {
+      border-color: rgba(247, 198, 106, 0.55);
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 0 0 6px rgba(247, 198, 106, 0.12);
+      transform: translateY(-1px);
+    }
+    button {
+      border: none;
+      border-radius: 20px;
+      padding: 18px 22px;
+      font-size: 16px;
+      font-weight: 800;
+      font-family: inherit;
+      cursor: pointer;
+      color: #1a1d1f;
+      background: linear-gradient(135deg, var(--accent-2), var(--accent));
+      box-shadow: 0 18px 36px rgba(255, 106, 61, 0.24);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 24px 44px rgba(255, 106, 61, 0.3);
+      filter: saturate(1.05);
+    }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 20px;
+    }
+    .meta-card {
+      padding: 16px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--line);
+    }
+    .meta-card strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      color: rgba(244, 241, 234, 0.88);
+    }
+    .meta-card span {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .admin-note {
+      margin-top: 18px;
+      color: rgba(244, 241, 234, 0.5);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    @media (max-width: 980px) {
+      .shell {
+        grid-template-columns: 1fr;
+        padding: 24px 0 36px;
+      }
+      .hero {
+        padding: 8px 8px 0;
+      }
+      .feature-list,
+      .meta-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 640px) {
+      .shell {
+        width: min(100% - 20px, 100%);
+        gap: 18px;
+      }
+      .card {
+        padding: 22px;
+        border-radius: 24px;
+      }
+      h1 {
+        font-size: 2.8rem;
+      }
+      h2 {
+        font-size: 1.8rem;
+      }
+      .brand-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Welcome Back</h1>
-    <p class="desc">Please enter your email to access the Batch Banner Generator.</p>
-    {% if error %}
-      <div class="error">{{ error }}</div>
-    {% endif %}
-    <form method="POST" action="{{ url_for('login') }}">
-      <input type="email" name="email" placeholder="Email address" required autofocus />
-      <button type="submit">Log in</button>
-    </form>
+  <div class="shell">
+    <section class="hero">
+      <div class="eyebrow"><span class="dot"></span> PW Creative Console</div>
+      <h1>Access your banner studio in one clean step.</h1>
+      <p class="lead">Email-only sign in keeps the workflow fast for your team while the allow list keeps access under control. Once you're in, the generator opens exactly where your design flow starts.</p>
+      <div class="feature-list">
+        <div class="feature">
+          <strong>Fast team access</strong>
+          <span>No password flow, no extra friction, just approved email entry.</span>
+        </div>
+        <div class="feature">
+          <strong>Admin managed</strong>
+          <span>Allow-list updates can be handled from the built-in admin workspace.</span>
+        </div>
+        <div class="feature">
+          <strong>Built for launch work</strong>
+          <span>Login protects the live generator without slowing banner production down.</span>
+        </div>
+        <div class="feature">
+          <strong>Modern operator UI</strong>
+          <span>Clean visual hierarchy, mobile-friendly layout, and high contrast forms.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="brand-row">
+        <div class="brand">
+          <img class="logo" src="/icon.jpg" alt="PW Banner Generator logo" />
+          <div>
+            <small>Secure Entry</small>
+            <strong>PW Banner Generator</strong>
+          </div>
+        </div>
+        <div class="status-pill">Allow-list Protected</div>
+      </div>
+
+      <h2>Sign in with your email</h2>
+      <p>Use the email address approved by your admin. If your email has not been added yet, you'll need to be whitelisted before the app unlocks.</p>
+
+      {% if error %}
+        <div class="error">{{ error }}</div>
+      {% endif %}
+
+      <form method="POST" action="{{ url_for('login') }}">
+        <div class="field">
+          <label for="email">Work Email</label>
+          <input id="email" type="email" name="email" placeholder="name@physicswallah.com" required autofocus autocomplete="email" />
+        </div>
+        <button type="submit">Continue to Generator</button>
+      </form>
+
+      <div class="meta-grid">
+        <div class="meta-card">
+          <strong>Access Rule</strong>
+          <span>Admins and explicitly allowed emails can enter the app.</span>
+        </div>
+        <div class="meta-card">
+          <strong>Admin Emails</strong>
+          <span>{{ admin_emails|join(', ') }}</span>
+        </div>
+      </div>
+
+      <div class="admin-note">For production on Vercel, set `ADMIN_EMAILS`, `ALLOWED_EMAILS`, and a strong `SECRET_KEY` in environment variables so access stays predictable across deployments.</div>
+    </section>
   </div>
 </body>
 </html>

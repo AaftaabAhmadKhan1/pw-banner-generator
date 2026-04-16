@@ -7,6 +7,7 @@
 import io
 import base64
 import os
+import re
 from collections import deque
 from pathlib import Path
 
@@ -23,27 +24,60 @@ IS_LIVE_APP = bool(os.getenv("VERCEL") or os.getenv("VERCEL_ENV"))
 app.secret_key = os.getenv("SECRET_KEY", "pw_hackathon_super_secret")
 app.config["MAX_CONTENT_LENGTH"] = 64 * 1024 * 1024  # 64 MB
 
-ALLOW_LIST_FILE = "/tmp/allowed_emails.json" if os.getenv("VERCEL") or os.getenv("VERCEL_ENV") else "allowed_emails.json"
+DATA_DIR = Path("/tmp") if IS_LIVE_APP else ROOT / "data"
+ALLOW_LIST_FILE = DATA_DIR / "allowed_emails.json"
+EMAIL_RE = re.compile(r"^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$", re.IGNORECASE)
+
+
+def parse_email_list(raw_value):
+    if not raw_value:
+        return []
+    emails = [
+        email.strip().lower()
+        for email in raw_value.replace(",", "\n").splitlines()
+        if email.strip()
+    ]
+    return list(dict.fromkeys(emails))
+
+
+ADMIN_EMAILS = parse_email_list(os.getenv("ADMIN_EMAILS", "admin@admin.com"))
+BOOTSTRAP_ALLOWED_EMAILS = parse_email_list(os.getenv("ALLOWED_EMAILS", ""))
+
+
+def normalize_email(email):
+    return email.strip().lower()
+
+
+def is_valid_email(email):
+    return bool(EMAIL_RE.match(email))
+
+
+def is_admin_email(email):
+    return normalize_email(email) in ADMIN_EMAILS
 
 def get_allowed_emails():
-    if os.path.exists(ALLOW_LIST_FILE):
+    if ALLOW_LIST_FILE.exists():
         try:
-            with open(ALLOW_LIST_FILE, "r") as f:
-                return json.load(f)
+            with ALLOW_LIST_FILE.open("r", encoding="utf-8") as f:
+                emails = json.load(f)
+            if isinstance(emails, list):
+                return [email for email in parse_email_list("\n".join(emails)) if not is_admin_email(email)]
         except Exception:
             pass
-    return []
+    return BOOTSTRAP_ALLOWED_EMAILS.copy()
 
 def save_allowed_emails(emails):
     try:
-        with open(ALLOW_LIST_FILE, "w") as f:
-            json.dump(emails, f)
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        cleaned_emails = [email for email in parse_email_list("\n".join(emails)) if not is_admin_email(email)]
+        with ALLOW_LIST_FILE.open("w", encoding="utf-8") as f:
+            json.dump(cleaned_emails, f, indent=2)
     except Exception as e:
         print(f"Error saving allowed emails: {e}")
 
 @app.before_request
 def require_login():
-    allowed_endpoints = ['login', 'admin', 'logout', 'static', 'serve_icon']
+    allowed_endpoints = ['login', 'logout', 'static', 'serve_icon']
     if request.endpoint in allowed_endpoints:
         return
     if request.path.startswith('/static/'):
@@ -61,7 +95,7 @@ def require_login():
         return redirect(url_for('login'))
         
     # Strictly enforce allowlist for standard users
-    if user != "admin@admin.com" and user not in get_allowed_emails():
+    if not is_admin_email(user) and user not in get_allowed_emails():
         session.pop("user", None)
         if request.path.startswith('/api/'):
             return jsonify({"error": "Unauthorized access. Email not in allow list."}), 401
@@ -286,7 +320,8 @@ def index():
         "index.html",
         bg_remove_api_url=BG_REMOVE_API_URL,
         is_live_app=IS_LIVE_APP,
-        user=session.get("user")
+        user=session.get("user"),
+        is_admin=is_admin_email(session.get("user", "")),
     )
 
 
@@ -294,15 +329,17 @@ def index():
 def login():
     error = request.args.get("error")
     if request.method == "POST":
-        email = request.form.get("email", "").strip().lower()
+        email = normalize_email(request.form.get("email", ""))
         if not email:
             error = "Email is required."
-        elif email == "admin@admin.com" or email in get_allowed_emails():
+        elif not is_valid_email(email):
+            error = "Enter a valid email address."
+        elif is_admin_email(email) or email in get_allowed_emails():
             session["user"] = email
             return redirect(url_for("index"))
         else:
             error = "Email not found in the allow list. Please contact the administrator."
-    return render_template("login.html", error=error)
+    return render_template("login.html", error=error, admin_emails=ADMIN_EMAILS)
 
 
 @app.route("/logout")
@@ -313,22 +350,35 @@ def logout():
 
 @app.route("/admin", methods=["GET", "POST"])
 def admin():
-    # Optional: secure admin route. We'll allow access if user is admin@admin.com or just let everyone see it for hackathon simplicity.
-    # To secure:
-    # if session.get("user") != "admin@admin.com":
-    #     return "Unauthorized", 401
+    current_user = session.get("user")
+    if not current_user:
+        return redirect(url_for("login"))
+    if not is_admin_email(current_user):
+        return redirect(url_for("index"))
+
     msg = None
+    error = None
     if request.method == "POST":
         emails_text = request.form.get("emails", "")
-        email_list = [e.strip().lower() for e in emails_text.replace(",", "\n").split("\n") if e.strip()]
-        # Remove duplicates
-        email_list = list(dict.fromkeys(email_list))
-        save_allowed_emails(email_list)
-        msg = "Allow list successfully updated."
+        email_list = parse_email_list(emails_text)
+        invalid_emails = [email for email in email_list if not is_valid_email(email)]
+        if invalid_emails:
+            error = f"These entries are not valid emails: {', '.join(invalid_emails[:5])}"
+        else:
+            save_allowed_emails(email_list)
+            msg = "Allow list successfully updated."
     
     current_emails = get_allowed_emails()
     emails_str = "\n".join(current_emails)
-    return render_template("admin.html", emails=emails_str, msg=msg)
+    return render_template(
+        "admin.html",
+        emails=emails_str,
+        msg=msg,
+        error=error,
+        allow_count=len(current_emails),
+        admin_emails=ADMIN_EMAILS,
+        user=current_user,
+    )
 
 
 @app.route("/icon.jpg")
