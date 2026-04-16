@@ -60,100 +60,13 @@
       background: linear-gradient(135deg, rgba(121, 214, 198, 0.34), rgba(49, 72, 75, 0.08));
     }
     .shell {
-      width: min(1180px, calc(100% - 32px));
+      width: min(100%, calc(100% - 32px));
       min-height: 100vh;
       margin: 0 auto;
-      display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
-      gap: 28px;
-      align-items: center;
-      padding: 32px 0;
-    }
-    .hero {
-      padding: 42px 24px 42px 8px;
-      min-height: 420px;
-    }
-    h1 {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: clamp(3rem, 5vw, 5.2rem);
-      line-height: 0.95;
-      letter-spacing: -0.05em;
-      margin: 24px 0 18px;
-      max-width: 620px;
-    }
-    .hero-art {
-      position: relative;
-      width: min(520px, 100%);
-      aspect-ratio: 1 / 1;
-      margin-top: 14px;
-      border-radius: 36px;
-      background:
-        radial-gradient(circle at 25% 25%, rgba(255, 106, 61, 0.42), transparent 24%),
-        radial-gradient(circle at 72% 28%, rgba(121, 214, 198, 0.4), transparent 22%),
-        radial-gradient(circle at 68% 72%, rgba(247, 198, 106, 0.42), transparent 24%),
-        linear-gradient(145deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.18));
-      border: 1px solid rgba(23, 33, 36, 0.08);
-      box-shadow: 0 24px 48px rgba(83, 61, 42, 0.12);
-      overflow: hidden;
-    }
-    .hero-art::before,
-    .hero-art::after {
-      content: "";
-      position: absolute;
-      border-radius: 999px;
-      border: 1px solid rgba(23, 33, 36, 0.08);
-    }
-    .hero-art::before {
-      width: 62%;
-      height: 62%;
-      left: 8%;
-      top: 10%;
-      background: rgba(255, 255, 255, 0.2);
-      backdrop-filter: blur(10px);
-    }
-    .hero-art::after {
-      width: 42%;
-      height: 42%;
-      right: 10%;
-      bottom: 12%;
-      background: rgba(23, 33, 36, 0.08);
-    }
-    .hero-grid {
-      position: absolute;
-      inset: 8%;
-      border-radius: 28px;
-      background-image:
-        linear-gradient(rgba(23, 33, 36, 0.08) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(23, 33, 36, 0.08) 1px, transparent 1px);
-      background-size: 34px 34px;
-    }
-    .hero-chip {
-      position: absolute;
-      display: inline-flex;
+      display: flex;
       align-items: center;
       justify-content: center;
-      padding: 12px 18px;
-      border-radius: 999px;
-      font-size: 13px;
-      font-weight: 800;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: #172124;
-      background: rgba(255, 255, 255, 0.72);
-      border: 1px solid rgba(23, 33, 36, 0.08);
-      backdrop-filter: blur(10px);
-    }
-    .hero-chip.one {
-      left: 10%;
-      top: 14%;
-    }
-    .hero-chip.two {
-      right: 12%;
-      top: 26%;
-    }
-    .hero-chip.three {
-      left: 18%;
-      bottom: 16%;
+      padding: 32px 0;
     }
     .card {
       position: relative;
@@ -167,6 +80,7 @@
       box-shadow: var(--shadow);
       border: 1px solid rgba(255, 255, 255, 0.09);
       isolation: isolate;
+      width: min(100%, 520px);
     }
     .card::before,
     .card::after {
@@ -310,11 +224,7 @@
     }
     @media (max-width: 980px) {
       .shell {
-        grid-template-columns: 1fr;
         padding: 24px 0 36px;
-      }
-      .hero {
-        padding: 8px 8px 0;
       }
     }
     @media (max-width: 640px) {
@@ -341,15 +251,6 @@
 </head>
 <body>
   <div class="shell">
-    <section class="hero">
-      <div class="hero-art" aria-hidden="true">
-        <div class="hero-grid"></div>
-        <div class="hero-chip one">Batch Studio</div>
-        <div class="hero-chip two">Design Flow</div>
-        <div class="hero-chip three">Live Access</div>
-      </div>
-    </section>
-
     <section class="card">
       <div class="brand-row">
         <div class="brand">
