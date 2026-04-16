@@ -53,7 +53,11 @@ def require_login():
     user = session.get("user")
     if not user:
         if request.path.startswith('/api/'):
-            return jsonify({"error": "Unauthorized"}), 401
+            return jsonify({"error": "Unauthorized", "path": request.path, "endpoint": request.endpoint}), 401
+        
+        # For Vercel Serverless compatibility during testing if they internally rewrite root to app.py
+        if request.endpoint == 'index' or request.path == '/' or request.path.endswith('app.py'):
+             return redirect(url_for('login'))
         return redirect(url_for('login'))
         
     # Strictly enforce allowlist for standard users
