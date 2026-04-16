@@ -71,27 +71,7 @@
     }
     .hero {
       padding: 42px 24px 42px 8px;
-    }
-    .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 16px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.55);
-      border: 1px solid rgba(23, 33, 36, 0.08);
-      backdrop-filter: blur(10px);
-      font-size: 13px;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-    .dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--accent), var(--accent-2));
-      box-shadow: 0 0 0 6px rgba(255, 106, 61, 0.12);
+      min-height: 420px;
     }
     h1 {
       font-family: 'Space Grotesk', sans-serif;
@@ -101,36 +81,79 @@
       margin: 24px 0 18px;
       max-width: 620px;
     }
-    .lead {
-      font-size: 18px;
-      line-height: 1.7;
-      max-width: 540px;
-      color: rgba(23, 33, 36, 0.78);
-      margin: 0 0 28px;
+    .hero-art {
+      position: relative;
+      width: min(520px, 100%);
+      aspect-ratio: 1 / 1;
+      margin-top: 14px;
+      border-radius: 36px;
+      background:
+        radial-gradient(circle at 25% 25%, rgba(255, 106, 61, 0.42), transparent 24%),
+        radial-gradient(circle at 72% 28%, rgba(121, 214, 198, 0.4), transparent 22%),
+        radial-gradient(circle at 68% 72%, rgba(247, 198, 106, 0.42), transparent 24%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.18));
+      border: 1px solid rgba(23, 33, 36, 0.08);
+      box-shadow: 0 24px 48px rgba(83, 61, 42, 0.12);
+      overflow: hidden;
     }
-    .feature-list {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px;
-      max-width: 620px;
+    .hero-art::before,
+    .hero-art::after {
+      content: "";
+      position: absolute;
+      border-radius: 999px;
+      border: 1px solid rgba(23, 33, 36, 0.08);
     }
-    .feature {
-      padding: 18px;
-      border-radius: 24px;
-      background: rgba(255, 255, 255, 0.5);
-      border: 1px solid rgba(23, 33, 36, 0.07);
-      backdrop-filter: blur(12px);
-      box-shadow: 0 18px 35px rgba(83, 61, 42, 0.08);
+    .hero-art::before {
+      width: 62%;
+      height: 62%;
+      left: 8%;
+      top: 10%;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
     }
-    .feature strong {
-      display: block;
-      font-size: 15px;
-      margin-bottom: 6px;
+    .hero-art::after {
+      width: 42%;
+      height: 42%;
+      right: 10%;
+      bottom: 12%;
+      background: rgba(23, 33, 36, 0.08);
     }
-    .feature span {
+    .hero-grid {
+      position: absolute;
+      inset: 8%;
+      border-radius: 28px;
+      background-image:
+        linear-gradient(rgba(23, 33, 36, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(23, 33, 36, 0.08) 1px, transparent 1px);
+      background-size: 34px 34px;
+    }
+    .hero-chip {
+      position: absolute;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 18px;
+      border-radius: 999px;
       font-size: 13px;
-      line-height: 1.6;
-      color: rgba(23, 33, 36, 0.68);
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #172124;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(23, 33, 36, 0.08);
+      backdrop-filter: blur(10px);
+    }
+    .hero-chip.one {
+      left: 10%;
+      top: 14%;
+    }
+    .hero-chip.two {
+      right: 12%;
+      top: 26%;
+    }
+    .hero-chip.three {
+      left: 18%;
+      bottom: 16%;
     }
     .card {
       position: relative;
@@ -285,35 +308,6 @@
       box-shadow: 0 24px 44px rgba(255, 106, 61, 0.3);
       filter: saturate(1.05);
     }
-    .meta-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px;
-      margin-top: 20px;
-    }
-    .meta-card {
-      padding: 16px;
-      border-radius: 20px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--line);
-    }
-    .meta-card strong {
-      display: block;
-      margin-bottom: 6px;
-      font-size: 13px;
-      color: rgba(244, 241, 234, 0.88);
-    }
-    .meta-card span {
-      font-size: 13px;
-      color: var(--muted);
-      line-height: 1.6;
-    }
-    .admin-note {
-      margin-top: 18px;
-      color: rgba(244, 241, 234, 0.5);
-      font-size: 12px;
-      line-height: 1.6;
-    }
     @media (max-width: 980px) {
       .shell {
         grid-template-columns: 1fr;
@@ -321,10 +315,6 @@
       }
       .hero {
         padding: 8px 8px 0;
-      }
-      .feature-list,
-      .meta-grid {
-        grid-template-columns: 1fr;
       }
     }
     @media (max-width: 640px) {
@@ -352,26 +342,11 @@
 <body>
   <div class="shell">
     <section class="hero">
-      <div class="eyebrow"><span class="dot"></span> PW Creative Console</div>
-      <h1>Access your banner studio in one clean step.</h1>
-      <p class="lead">Email-only sign in keeps the workflow fast for your team while the allow list keeps access under control. Once you're in, the generator opens exactly where your design flow starts.</p>
-      <div class="feature-list">
-        <div class="feature">
-          <strong>Fast team access</strong>
-          <span>No password flow, no extra friction, just approved email entry.</span>
-        </div>
-        <div class="feature">
-          <strong>Admin managed</strong>
-          <span>Allow-list updates can be handled from the built-in admin workspace.</span>
-        </div>
-        <div class="feature">
-          <strong>Built for launch work</strong>
-          <span>Login protects the live generator without slowing banner production down.</span>
-        </div>
-        <div class="feature">
-          <strong>Modern operator UI</strong>
-          <span>Clean visual hierarchy, mobile-friendly layout, and high contrast forms.</span>
-        </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="hero-grid"></div>
+        <div class="hero-chip one">Batch Studio</div>
+        <div class="hero-chip two">Design Flow</div>
+        <div class="hero-chip three">Live Access</div>
       </div>
     </section>
 
@@ -397,23 +372,10 @@
       <form method="POST" action="{{ url_for('login') }}">
         <div class="field">
           <label for="email">Work Email</label>
-          <input id="email" type="email" name="email" placeholder="name@physicswallah.com" required autofocus autocomplete="email" />
+          <input id="email" type="email" name="email" placeholder="Enter your PW Email ID." required autofocus autocomplete="email" />
         </div>
         <button type="submit">Continue to Generator</button>
       </form>
-
-      <div class="meta-grid">
-        <div class="meta-card">
-          <strong>Access Rule</strong>
-          <span>Admins and explicitly allowed emails can enter the app.</span>
-        </div>
-        <div class="meta-card">
-          <strong>Admin Emails</strong>
-          <span>{{ admin_emails|join(', ') }}</span>
-        </div>
-      </div>
-
-      <div class="admin-note">For production on Vercel, set `ADMIN_EMAILS`, `ALLOWED_EMAILS`, and a strong `SECRET_KEY` in environment variables so access stays predictable across deployments.</div>
     </section>
   </div>
 </body>
