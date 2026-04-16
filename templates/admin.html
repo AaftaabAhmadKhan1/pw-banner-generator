@@ -114,6 +114,28 @@
       color: var(--muted);
       margin-top: 16px;
     }
+    .storage-banner {
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .storage-banner strong {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+    .storage-banner span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .storage-banner.warning {
+      border-color: rgba(255, 106, 61, 0.18);
+      background: rgba(255, 106, 61, 0.08);
+    }
     .link-row {
       display: flex;
       flex-wrap: wrap;
@@ -337,6 +359,15 @@
 
       <p class="note">Update one email per line. Admin emails stay privileged automatically and don't need to be duplicated in the allow list.</p>
 
+      <div class="storage-banner {% if not is_persistent_storage %}warning{% endif %}">
+        <strong>Allow List Storage: {{ storage_label }}</strong>
+        {% if is_persistent_storage %}
+          <span>Your allow list is using persistent storage and should survive redeploys and server restarts.</span>
+        {% else %}
+          <span>Your allow list is currently not permanent on Vercel. Add `KV_REST_API_URL` and `KV_REST_API_TOKEN` in Vercel environment variables to stop emails from disappearing.</span>
+        {% endif %}
+      </div>
+
       <div class="link-row">
         <a href="{{ url_for('index') }}">Open Generator</a>
         <a href="{{ url_for('logout') }}">Logout</a>
@@ -376,7 +407,7 @@
           </div>
           <div class="tip">
             <strong>Recommended env vars</strong>
-            <span>Set `SECRET_KEY` for sessions, `ADMIN_EMAILS` for admin access, and `ALLOWED_EMAILS` to seed first-time deployments.</span>
+            <span>Set `SECRET_KEY` for sessions, `ADMIN_EMAILS` for admin access, `ALLOWED_EMAILS` to seed first-time deployments, and `KV_REST_API_URL` plus `KV_REST_API_TOKEN` for permanent allow-list storage.</span>
           </div>
           <div class="tip">
             <strong>Validation</strong>

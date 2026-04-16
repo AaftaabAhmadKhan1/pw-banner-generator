@@ -10,6 +10,8 @@ import os
 import re
 from collections import deque
 from pathlib import Path
+from urllib.error import URLError
+from urllib.request import Request, urlopen
 
 from flask import Flask, render_template, send_from_directory, request, jsonify, session, redirect, url_for
 import json
@@ -26,7 +28,10 @@ app.config["MAX_CONTENT_LENGTH"] = 64 * 1024 * 1024  # 64 MB
 
 DATA_DIR = Path("/tmp") if IS_LIVE_APP else ROOT / "data"
 ALLOW_LIST_FILE = DATA_DIR / "allowed_emails.json"
+ALLOW_LIST_STORAGE_KEY = os.getenv("ALLOW_LIST_STORAGE_KEY", "pw_banner_allowed_emails")
 EMAIL_RE = re.compile(r"^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$", re.IGNORECASE)
+KV_REST_API_URL = os.getenv("KV_REST_API_URL", "").strip()
+KV_REST_API_TOKEN = os.getenv("KV_REST_API_TOKEN", "").strip()
 
 
 def parse_email_list(raw_value):
@@ -55,7 +60,63 @@ def is_valid_email(email):
 def is_admin_email(email):
     return normalize_email(email) in ADMIN_EMAILS
 
+
+def has_persistent_allow_list_storage():
+    return bool(KV_REST_API_URL and KV_REST_API_TOKEN)
+
+
+def get_allow_list_storage_label():
+    if has_persistent_allow_list_storage():
+        return "Persistent Redis storage"
+    if IS_LIVE_APP:
+        return "Temporary Vercel filesystem"
+    return "Local file storage"
+
+
+def kv_command(*parts):
+    payload = json.dumps(list(parts)).encode("utf-8")
+    req = Request(
+        KV_REST_API_URL,
+        data=payload,
+        headers={
+            "Authorization": f"Bearer {KV_REST_API_TOKEN}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    with urlopen(req, timeout=10) as response:
+        body = json.loads(response.read().decode("utf-8"))
+    if body.get("error"):
+        raise RuntimeError(body["error"])
+    return body.get("result")
+
+
+def get_allowed_emails_from_kv():
+    try:
+        result = kv_command("GET", ALLOW_LIST_STORAGE_KEY)
+        if not result:
+            return []
+        if isinstance(result, list):
+            emails = result
+        else:
+            emails = json.loads(result)
+        if isinstance(emails, list):
+            return [email for email in parse_email_list("\n".join(emails)) if not is_admin_email(email)]
+    except (URLError, TimeoutError, ValueError, RuntimeError) as e:
+        print(f"Error reading allow list from KV: {e}")
+    return None
+
+
+def save_allowed_emails_to_kv(emails):
+    cleaned_emails = [email for email in parse_email_list("\n".join(emails)) if not is_admin_email(email)]
+    kv_command("SET", ALLOW_LIST_STORAGE_KEY, json.dumps(cleaned_emails))
+    return cleaned_emails
+
 def get_allowed_emails():
+    if has_persistent_allow_list_storage():
+        kv_emails = get_allowed_emails_from_kv()
+        if kv_emails is not None:
+            return kv_emails
     if ALLOW_LIST_FILE.exists():
         try:
             with ALLOW_LIST_FILE.open("r", encoding="utf-8") as f:
@@ -68,6 +129,9 @@ def get_allowed_emails():
 
 def save_allowed_emails(emails):
     try:
+        if has_persistent_allow_list_storage():
+            save_allowed_emails_to_kv(emails)
+            return
         DATA_DIR.mkdir(parents=True, exist_ok=True)
         cleaned_emails = [email for email in parse_email_list("\n".join(emails)) if not is_admin_email(email)]
         with ALLOW_LIST_FILE.open("w", encoding="utf-8") as f:
@@ -378,6 +442,8 @@ def admin():
         allow_count=len(current_emails),
         admin_emails=ADMIN_EMAILS,
         user=current_user,
+        storage_label=get_allow_list_storage_label(),
+        is_persistent_storage=has_persistent_allow_list_storage(),
     )
 
 
