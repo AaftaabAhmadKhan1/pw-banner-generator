@@ -364,7 +364,7 @@
         {% if is_persistent_storage %}
           <span>Your allow list is using persistent storage and should survive redeploys and server restarts.</span>
         {% else %}
-          <span>Your allow list is currently not permanent on Vercel. Add `KV_REST_API_URL` and `KV_REST_API_TOKEN` in Vercel environment variables to stop emails from disappearing.</span>
+          <span>Your allow list is currently not permanent on Vercel. Connect a Vercel Blob store so `BLOB_READ_WRITE_TOKEN` is available and emails stop disappearing.</span>
         {% endif %}
       </div>
 
@@ -407,7 +407,7 @@
           </div>
           <div class="tip">
             <strong>Recommended env vars</strong>
-            <span>Set `SECRET_KEY` for sessions, `ADMIN_EMAILS` for admin access, `ALLOWED_EMAILS` to seed first-time deployments, and `KV_REST_API_URL` plus `KV_REST_API_TOKEN` for permanent allow-list storage.</span>
+            <span>Set `SECRET_KEY` for sessions, `ADMIN_EMAILS` for admin access, `ALLOWED_EMAILS` to seed first-time deployments, and keep `BLOB_READ_WRITE_TOKEN` linked for permanent allow-list storage.</span>
           </div>
           <div class="tip">
             <strong>Validation</strong>
