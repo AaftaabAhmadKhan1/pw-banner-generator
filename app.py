@@ -12,8 +12,14 @@ from pathlib import Path
 
 from flask import Flask, render_template, send_from_directory, request, jsonify, session, redirect, url_for
 import json
+from PIL import Image, ImageFilter
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
+
+ROOT = Path(__file__).parent
+BG_REMOVE_API_URL = os.getenv("BG_REMOVE_API_URL", "").strip()
+IS_LIVE_APP = bool(os.getenv("VERCEL") or os.getenv("VERCEL_ENV"))
+
 app.secret_key = os.getenv("SECRET_KEY", "pw_hackathon_super_secret")
 app.config["MAX_CONTENT_LENGTH"] = 64 * 1024 * 1024  # 64 MB
 
